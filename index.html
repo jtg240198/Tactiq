@@ -3128,14 +3128,21 @@ async function handleSubscribe(planKey){
   const prices={player:STRIPE_PLAYER_PRICE,coach:STRIPE_COACH_PRICE,club:STRIPE_CLUB_PRICE};
   const priceId=prices[planKey];
   try{
-    const{error}=await stripe.redirectToCheckout({
-      lineItems:[{price:priceId,quantity:1}],
-      mode:'subscription',
-      successUrl:window.location.origin+window.location.pathname+'?sub=success',
-      cancelUrl:window.location.origin+window.location.pathname+'?sub=cancel',
-      customerEmail:currentUser.email,
+    // Call Supabase Edge Function to create Checkout Session server-side
+    const res=await fetch('https://bhkrvdzpwowbozgyiwmq.supabase.co/functions/v1/create-checkout-session',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        priceId:priceId,
+        customerEmail:currentUser.email,
+        successUrl:window.location.origin+'/?sub=success',
+        cancelUrl:window.location.origin+'/pricing',
+      }),
     });
-    if(error)alert(error.message);
+    const{sessionId,error:fnError}=await res.json();
+    if(fnError)throw new Error(fnError);
+    const{error}=await stripe.redirectToCheckout({sessionId});
+    if(error)throw new Error(error.message);
   }catch(e){alert('Payment error: '+e.message);}
 }
 
