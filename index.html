@@ -3129,7 +3129,7 @@ async function handleSubscribe(planKey){
   const priceId=prices[planKey];
   try{
     // Call Supabase Edge Function to create Checkout Session server-side
-    const res=await fetch('https://bhkrvdzpwowbozgyiwmq.supabase.co/functions/v1/create-checkout-session',{
+    const res=await fetch('https://bhkrvdzpwowbozgyiwmq.supabase.co/functions/v1/quick-action',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
