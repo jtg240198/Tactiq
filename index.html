@@ -3134,7 +3134,7 @@ async function handleSubscribe(planKey){
       successUrl:window.location.origin+window.location.pathname+'?sub=success',
       cancelUrl:window.location.origin+window.location.pathname+'?sub=cancel',
       customerEmail:currentUser.email,
-      trialPeriodDays:7,
+      subscriptionData:{trialPeriodDays:7},
     });
     if(error)alert(error.message);
   }catch(e){alert('Payment error: '+e.message);}
