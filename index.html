@@ -2842,6 +2842,7 @@ async function handleSignupPayment(){
     });
     var json = await res.json();
     if(json.error) throw new Error(json.error);
+    window._inSignupFlow = false; // clear flag before Stripe redirect
     var result = await stripe.redirectToCheckout({sessionId: json.sessionId});
     if(result.error) throw new Error(result.error.message);
   }catch(e){
@@ -2863,24 +2864,19 @@ async function handleRegister(){
   btn.textContent = 'Creating account...';
   btn.disabled = true;
   try {
+    window._inSignupFlow = true; // prevent auth redirect during payment step
     const { data, error } = await sb.auth.signUp({ email: email, password: pass, options: { data: { full_name: name } } });
-    if(error){ showMsg(msg,'error', error.message); }
-    else {
-      // Account created — proceed to payment step
-      // data.user exists even when email confirmation is required
-      if(data && data.user){
-        currentUser = data.user;
-        goToSignupStep3();
-      } else if(data && !data.user) {
-        // Email confirmation required — store email for later, still go to payment
-        // We'll use a temporary object so handleSignupPayment can use the email
-        currentUser = { email: document.getElementById('regEmail').value.trim(), id: null };
-        goToSignupStep3();
-      } else {
-        goToSignupStep3();
-      }
+    if(error){
+      window._inSignupFlow = false;
+      showMsg(msg,'error', error.message);
+    } else {
+      // Always go to step 3 regardless of email confirmation setting
+      if(data && data.user){ currentUser = data.user; }
+      else { currentUser = { email: email, id: null }; }
+      goToSignupStep3();
     }
   } catch(e) {
+    window._inSignupFlow = false;
     showMsg(msg,'error','Error: ' + e.message);
   }
   btn.textContent = 'Continue to Payment →';
@@ -3763,7 +3759,11 @@ document.addEventListener('DOMContentLoaded',function(){
     else{routeTo(window.location.pathname);}
   }catch(e){console.error('Session:',e);routeTo(window.location.pathname);}
   sb.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session?.user){currentUser=session.user;await loadDashboard();}
+    if(event==='SIGNED_IN'&&session?.user){
+      currentUser=session.user;
+      // Don't redirect if we're in the middle of the signup payment flow
+      if(!window._inSignupFlow){ await loadDashboard(); }
+    }
     else if(event==='SIGNED_OUT'){currentUser=null;userPlan='free';navigate('/');}
   });
   // Post-payment return from Stripe
