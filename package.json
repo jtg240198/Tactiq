@@ -1,0 +1,8 @@
+{
+  "name": "tactiq",
+  "version": "1.0.0",
+  "dependencies": {
+    "stripe": "^13.3.0",
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
