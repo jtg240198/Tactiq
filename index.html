@@ -2830,7 +2830,7 @@ async function handleSignupPayment(){
   var btn = document.getElementById('signupPayBtn');
   if(btn){ btn.textContent = 'Opening Stripe...'; btn.disabled = true; }
   try{
-    var res = await fetch('https://bhkrvdzpwowbozgyiwmq.supabase.co/functions/v1/quick-action',{
+    var res = await fetch('https://friendly-zuccutto-eb2d7a.netlify.app/.netlify/functions/create-checkout',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
       body:JSON.stringify({
@@ -2866,9 +2866,19 @@ async function handleRegister(){
     const { data, error } = await sb.auth.signUp({ email: email, password: pass, options: { data: { full_name: name } } });
     if(error){ showMsg(msg,'error', error.message); }
     else {
-      // Account created — set currentUser and proceed to payment step
-      if(data && data.user){ currentUser = data.user; }
-      goToSignupStep3();
+      // Account created — proceed to payment step
+      // data.user exists even when email confirmation is required
+      if(data && data.user){
+        currentUser = data.user;
+        goToSignupStep3();
+      } else if(data && !data.user) {
+        // Email confirmation required — store email for later, still go to payment
+        // We'll use a temporary object so handleSignupPayment can use the email
+        currentUser = { email: document.getElementById('regEmail').value.trim(), id: null };
+        goToSignupStep3();
+      } else {
+        goToSignupStep3();
+      }
     }
   } catch(e) {
     showMsg(msg,'error','Error: ' + e.message);
@@ -3555,7 +3565,7 @@ async function handleSubscribe(planKey){
   const priceId=prices[planKey];
   try{
     // Call Supabase Edge Function to create Checkout Session server-side
-    const res=await fetch('https://bhkrvdzpwowbozgyiwmq.supabase.co/functions/v1/quick-action',{
+    const res=await fetch('https://friendly-zuccutto-eb2d7a.netlify.app/.netlify/functions/create-checkout',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
