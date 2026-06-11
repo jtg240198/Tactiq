@@ -293,6 +293,16 @@ body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,
 .sess-mode-indicator{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;margin-bottom:14px;font-size:12px;font-weight:600}
 .sess-mode-solo{background:rgba(0,194,255,0.1);border:1px solid rgba(0,194,255,0.25);color:var(--accent)}
 .sess-mode-team{background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.25);color:#00E676}
+
+/* ── EXAMPLES DIAGRAM ── */
+.ex-diagram-wrap{margin:12px 0 16px;background:rgba(0,0,0,0.2);border-radius:10px;overflow:hidden;padding:8px}
+.ex-diagram-wrap svg{display:block;margin:0 auto;border-radius:6px}
+.ex-diagram-key{display:flex;flex-wrap:wrap;gap:8px;padding:8px 4px 0;border-top:1px solid rgba(255,255,255,0.07);margin-top:6px}
+.ex-key-item{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(180,210,240,0.7);white-space:nowrap}
+.ex-key-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.ex-key-line{width:18px;height:2px;flex-shrink:0}
+.ex-key-arrow{width:18px;height:2px;flex-shrink:0;position:relative}
+.ex-key-arrow::after{content:'';position:absolute;right:-1px;top:-3px;border-left:5px solid;border-top:4px solid transparent;border-bottom:4px solid transparent}
 .hidden{display:none!important}
 /* ── LANDING PAGE ── */
 .land-screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:0 0 60px;overflow:hidden;height:0;min-height:0}
@@ -960,6 +970,220 @@ fbq('track','PageView');
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════
+// EXAMPLES PAGE DIAGRAMS
+// ═══════════════════════════════════════════════════════
+function renderExampleDiagrams(){
+  var diagrams = {
+    // PLAYER EXAMPLE 1: U12 Striker Individual Finishing
+    // Phase 1: Activation — Strike Mechanics 8m
+    'ex-p1-diag1': {pitchType:'grid',vw:260,vh:180,title:'Activation — 8m Strike Warm-Up',
+      legend:['attacker','pass'],
+      elements:[
+        {type:'goal',x:130,y:22},
+        {type:'cone',x:100,y:115},{type:'cone',x:130,y:115},{type:'cone',x:160,y:115},
+        {type:'label',x:130,y:107,text:'8m',size:7,color:'rgba(180,210,240,0.5)'},
+        {type:'attacker',x:130,y:158,label:'P'},
+        {type:'ball',x:130,y:142},
+        {type:'pass',x1:130,y1:140,x2:130,y2:35,step:1},
+        {type:'label',x:130,y:172,text:'Inside foot — technique focus — 10 shots'}
+      ]},
+    // Phase 2: Technical — 4 Corner Target Drill
+    'ex-p1-diag2': {pitchType:'grid',vw:260,vh:180,title:'Technical — Four Corner Target Drill',
+      legend:['attacker','pass'],
+      elements:[
+        {type:'goal',x:130,y:22},
+        {type:'label',x:112,y:19,text:'TL',color:'#00C2FF',size:9},
+        {type:'label',x:148,y:19,text:'TR',color:'#00C2FF',size:9},
+        {type:'label',x:112,y:33,text:'BL',color:'#FFB300',size:9},
+        {type:'label',x:148,y:33,text:'BR',color:'#FFB300',size:9},
+        {type:'cone',x:90,y:100},{type:'cone',x:130,y:100},{type:'cone',x:170,y:100},
+        {type:'label',x:130,y:93,text:'16m',size:7,color:'rgba(180,210,240,0.5)'},
+        {type:'attacker',x:130,y:158,label:'P'},
+        {type:'ball',x:115,y:158},
+        {type:'pass',x1:130,y1:156,x2:112,y2:32,step:1},
+        {type:'pass',x1:130,y1:156,x2:148,y2:32},
+        {type:'label',x:130,y:172,text:'5 shots per zone — pick corner before run-up'}
+      ]},
+    // Phase 3: Game Scenario — Movement & Finish
+    'ex-p1-diag3': {pitchType:'grid',vw:260,vh:180,title:'Game Scenario — Movement & Finish',
+      legend:['attacker','dribble','run','pass'],
+      elements:[
+        {type:'goal',x:130,y:22},
+        {type:'cone',x:85,y:95},{type:'cone',x:175,y:95},
+        {type:'label',x:130,y:88,text:'20m',size:7,color:'rgba(180,210,240,0.5)'},
+        {type:'attacker',x:130,y:158,label:'P'},
+        {type:'ball',x:130,y:142},
+        {type:'dribble',x1:130,y1:140,x2:85,y2:100,step:1},
+        {type:'run',x1:85,y1:98,x2:85,y2:50,step:2},
+        {type:'pass',x1:85,y1:48,x2:115,y2:30,step:3},
+        {type:'label',x:130,y:172,text:'Roll wide → accelerate → shoot within 3 sec'}
+      ]},
+    // Phase 4: Cool Down — Deliberate Penalties
+    'ex-p1-diag4': {pitchType:'grid',vw:260,vh:180,title:'Cool Down — Deliberate Penalty Practice',
+      legend:['attacker','pass'],
+      elements:[
+        {type:'goal',x:130,y:22},
+        {type:'cone',x:130,y:105,label:'Spot'},
+        {type:'attacker',x:130,y:128,label:'P'},
+        {type:'ball',x:130,y:110},
+        {type:'pass',x1:130,y1:108,x2:112,y2:28},
+        {type:'label',x:130,y:172,text:'Penalty spot — pick corner — commit and strike'}
+      ]},
+
+    // PLAYER EXAMPLE 2: Home Ball Mastery Session
+    'ex-p2-diag1': {pitchType:'grid',vw:260,vh:180,title:'Activation — Sole Roll Wake-Up',
+      legend:['attacker','dribble'],
+      elements:[
+        {type:'area',x:55,y:30,w:150,h:120,label:'Any space'},
+        {type:'attacker',x:130,y:145,label:'P'},
+        {type:'ball',x:130,y:128},
+        {type:'dribble',x1:130,y1:126,x2:130,y2:80,step:1},
+        {type:'dribble',x1:130,y1:80,x2:90,y2:80,step:2},
+        {type:'dribble',x1:90,y1:80,x2:90,y2:120,step:3},
+        {type:'label',x:130,y:172,text:'Sole rolls — forward/back then side to side'}
+      ]},
+    'ex-p2-diag2': {pitchType:'grid',vw:260,vh:180,title:'Technical — Inside-Outside Cone Weave',
+      legend:['attacker','dribble'],
+      elements:[
+        {type:'cone',x:28,y:90},{type:'cone',x:58,y:90},{type:'cone',x:88,y:90},
+        {type:'cone',x:118,y:90},{type:'cone',x:148,y:90},{type:'cone',x:178,y:90},{type:'cone',x:208,y:90},
+        {type:'attacker',x:28,y:145,label:'P'},
+        {type:'ball',x:28,y:128},
+        {type:'dribble',x1:28,y1:126,x2:58,y2:78,step:1},
+        {type:'dribble',x1:58,y1:78,x2:88,y2:100,step:2},
+        {type:'dribble',x1:88,y1:100,x2:118,y2:78,step:3},
+        {type:'dribble',x1:118,y1:78,x2:148,y2:100,step:4},
+        {type:'label',x:130,y:172,text:'Inside-outside weave — sharp changes of direction'}
+      ]},
+    'ex-p2-diag3': {pitchType:'grid',vw:260,vh:180,title:'Game Scenario — Box Dribble Challenge',
+      legend:['attacker','dribble'],
+      elements:[
+        {type:'area',x:55,y:30,w:150,h:120,label:'5m x 5m'},
+        {type:'cone',x:55,y:30},{type:'cone',x:130,y:30},{type:'cone',x:205,y:30},
+        {type:'cone',x:55,y:90},{type:'cone',x:205,y:90},
+        {type:'cone',x:55,y:150},{type:'cone',x:130,y:150},{type:'cone',x:205,y:150},
+        {type:'attacker',x:80,y:65,label:'P'},
+        {type:'ball',x:80,y:50},
+        {type:'dribble',x1:80,y1:58,x2:130,y2:88,step:1},
+        {type:'dribble',x1:130,y1:88,x2:175,y2:58,step:2},
+        {type:'label',x:130,y:172,text:'60 sec timer — change direction at every marker'}
+      ]},
+    'ex-p2-diag4': {pitchType:'grid',vw:260,vh:180,title:'Cool Down — Free Touch & Stretch',
+      legend:['attacker'],
+      elements:[
+        {type:'attacker',x:130,y:90,label:'P'},
+        {type:'ball',x:115,y:90},
+        {type:'label',x:130,y:55,text:'Free dribble — relaxed pace',color:'#00E676'},
+        {type:'label',x:130,y:68,text:'Finish with quad and hip flexor stretches',size:7}
+      ]},
+
+    // CLUB EXAMPLE 1: U15 High Press Session
+    'ex-c1-diag1': {pitchType:'half',vw:280,vh:200,title:'Activation — Press Trigger Walkthrough',
+      legend:['attacker','defender','run'],
+      elements:[
+        {type:'gk',x:140,y:185},
+        {type:'defender',x:95,y:165,label:'CB'},{type:'defender',x:185,y:165,label:'CB'},
+        {type:'defender',x:45,y:138,label:'LB'},{type:'defender',x:235,y:138,label:'RB'},
+        {type:'attacker',x:140,y:108,label:'A1'},{type:'attacker',x:80,y:85,label:'A2'},{type:'attacker',x:200,y:85,label:'A3'},
+        {type:'ball',x:95,y:165},
+        {type:'run',x1:140,y1:106,x2:100,y2:155,step:1},
+        {type:'run',x1:80,y1:83,x2:90,y2:125,step:2},
+        {type:'run',x1:200,y1:83,x2:185,y2:125,step:3},
+        {type:'label',x:140,y:22,text:'TRIGGER: back pass → press now',color:'#FF4D6A'}
+      ]},
+    'ex-c1-diag2': {pitchType:'half',vw:280,vh:200,title:'Technical — 6v6 Shadow Press Drill',
+      legend:['attacker','defender','run'],
+      elements:[
+        {type:'gk',x:140,y:185},
+        {type:'defender',x:85,y:165,label:'CB'},{type:'defender',x:195,y:165,label:'CB'},
+        {type:'defender',x:42,y:135,label:'LB'},{type:'defender',x:238,y:135,label:'RB'},
+        {type:'defender',x:140,y:120,label:'CM'},
+        {type:'attacker',x:140,y:68,label:'A1'},{type:'attacker',x:75,y:88,label:'A2'},{type:'attacker',x:205,y:88,label:'A3'},
+        {type:'attacker',x:100,y:108,label:'A4'},{type:'attacker',x:180,y:108,label:'A5'},
+        {type:'ball',x:85,y:165},
+        {type:'run',x1:140,y1:66,x2:90,y2:128,step:1},
+        {type:'run',x1:75,y1:86,x2:52,y2:128,step:2},
+        {type:'run',x1:205,y1:86,x2:228,y2:128,step:3},
+        {type:'label',x:140,y:22,text:'Shadow press — shape only, no tackling'}
+      ]},
+    'ex-c1-diag3': {pitchType:'full',vw:300,vh:185,title:'Game Scenario — Press to Score 8v8',
+      legend:['attacker','defender','run','pass'],
+      elements:[
+        {type:'goal',x:18,y:92},{type:'goal',x:282,y:92},
+        {type:'attacker',x:55,y:55,label:'A1'},{type:'attacker',x:55,y:130,label:'A2'},{type:'attacker',x:90,y:92,label:'A3'},
+        {type:'attacker',x:130,y:55,label:'A4'},{type:'attacker',x:130,y:130,label:'A5'},
+        {type:'defender',x:175,y:55,label:'D1'},{type:'defender',x:175,y:92,label:'D2'},{type:'defender',x:175,y:130,label:'D3'},
+        {type:'ball',x:175,y:55},
+        {type:'area',x:148,y:8,w:148,h:169,label:'Bonus goal if won here',fill:'rgba(0,230,118,0.04)',stroke:'rgba(0,230,118,0.3)'},
+        {type:'run',x1:90,y1:90,x2:165,y2:58,step:1},
+        {type:'pass',x1:173,y1:53,x2:130,y2:53,step:2},
+        {type:'pass',x1:128,y1:53,x2:282,y2:90,step:3},
+        {type:'label',x:220,y:180,text:'Win ball high = bonus goal'}
+      ]},
+    'ex-c1-diag4': {pitchType:'half',vw:280,vh:200,title:'Cool Down — Shape Review & Debrief',
+      legend:['attacker'],
+      elements:[
+        {type:'attacker',x:140,y:68,label:'A1'},{type:'attacker',x:80,y:88,label:'A2'},{type:'attacker',x:200,y:88,label:'A3'},
+        {type:'attacker',x:100,y:128,label:'A4'},{type:'attacker',x:180,y:128,label:'A5'},
+        {type:'label',x:140,y:42,text:'Review pressing shape at walking pace',color:'#00E676'},
+        {type:'label',x:140,y:55,text:'Discuss: which triggers worked best?',size:7}
+      ]},
+
+    // CLUB EXAMPLE 2: Matchday Recovery Session
+    'ex-c2-diag1': {pitchType:'half',vw:280,vh:200,title:'Activation — Light Jog & Dynamic Mobility',
+      legend:['attacker','run'],
+      elements:[
+        {type:'attacker',x:50,y:105,label:'1'},{type:'attacker',x:90,y:58,label:'2'},{type:'attacker',x:140,y:45,label:'3'},
+        {type:'attacker',x:190,y:58,label:'4'},{type:'attacker',x:230,y:105,label:'5'},
+        {type:'attacker',x:210,y:155,label:'6'},{type:'attacker',x:140,y:170,label:'7'},{type:'attacker',x:70,y:155,label:'8'},
+        {type:'run',x1:52,y1:103,x2:88,y2:60,step:1},
+        {type:'run',x1:92,y1:58,x2:138,y2:47,step:2},
+        {type:'label',x:140,y:25,text:'Easy jog around pitch — heart rate stays low'}
+      ]},
+    'ex-c2-diag2': {pitchType:'grid',vw:280,vh:180,title:'Technical — Possession Rondo Low Intensity',
+      legend:['attacker','neutral','defender','pass'],
+      elements:[
+        {type:'area',x:30,y:25,w:220,h:130,label:'Large grid'},
+        {type:'attacker',x:38,y:33,label:'A1'},{type:'attacker',x:148,y:33,label:'A2'},{type:'attacker',x:242,y:33,label:'A3'},
+        {type:'attacker',x:38,y:147,label:'A4'},{type:'attacker',x:148,y:147,label:'A5'},{type:'attacker',x:242,y:147,label:'A6'},
+        {type:'neutral',x:100,y:90,label:'N1'},{type:'neutral',x:180,y:90,label:'N2'},
+        {type:'defender',x:120,y:68,label:'D1'},{type:'defender',x:158,y:112,label:'D2'},
+        {type:'ball',x:38,y:33},
+        {type:'pass',x1:40,y1:35,x2:94,y2:87,step:1},
+        {type:'pass',x1:100,y1:87,x2:144,y2:35,step:2},
+        {type:'label',x:140,y:172,text:'6+2 v 2 — emphasis on movement & communication'}
+      ]},
+    'ex-c2-diag3': {pitchType:'half',vw:280,vh:200,title:'Game Scenario — Match Review Discussion',
+      legend:['attacker'],
+      elements:[
+        {type:'attacker',x:80,y:120,label:'1'},{type:'attacker',x:115,y:145,label:'2'},{type:'attacker',x:140,y:155,label:'3'},
+        {type:'attacker',x:165,y:145,label:'4'},{type:'attacker',x:200,y:120,label:'5'},
+        {type:'attacker',x:200,y:85,label:'6'},{type:'attacker',x:165,y:62,label:'7'},{type:'attacker',x:140,y:52,label:'8'},
+        {type:'attacker',x:115,y:62,label:'9'},{type:'attacker',x:80,y:85,label:'10'},
+        {type:'ball',x:140,y:108},
+        {type:'label',x:140,y:30,text:'Team circle discussion',color:'#00E676'},
+        {type:'label',x:140,y:43,text:'What went well · What to improve next week',size:7}
+      ]},
+    'ex-c2-diag4': {pitchType:'half',vw:280,vh:200,title:'Cool Down — Full Team Static Stretch',
+      legend:['attacker'],
+      elements:[
+        {type:'attacker',x:70,y:110,label:'1'},{type:'attacker',x:110,y:135,label:'2'},{type:'attacker',x:140,y:142,label:'3'},
+        {type:'attacker',x:170,y:135,label:'4'},{type:'attacker',x:210,y:110,label:'5'},
+        {type:'attacker',x:200,y:78,label:'6'},{type:'attacker',x:165,y:55,label:'7'},
+        {type:'attacker',x:140,y:48,label:'8'},{type:'attacker',x:115,y:55,label:'9'},{type:'attacker',x:80,y:78,label:'10'},
+        {type:'label',x:140,y:28,text:'Team stretching together — 25 seconds each',color:'#00E676'},
+        {type:'label',x:140,y:40,text:'End: one word each — how do we feel next week?',size:7}
+      ]}
+  };
+
+  Object.keys(diagrams).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.innerHTML = renderSetupDiagram(diagrams[id]);
+  });
+}
+
+
 const ROUTES={
   '/':()=>currentUser?loadDashboard():showPublicScreen('landingScreen'),
   '/login':()=>currentUser?loadDashboard():showPublicScreen('loginScreen'),
@@ -967,7 +1191,7 @@ const ROUTES={
   '/dashboard':()=>currentUser?loadDashboard():navigate('/login'),
   '/account':()=>currentUser?showAuthScreen('profileScreen'):navigate('/login'),
   '/pricing':()=>showPublicScreen('plansScreen'),
-  '/examples':()=>showPublicScreen('examplesScreen'),
+  '/examples':()=>{showPublicScreen('examplesScreen');setTimeout(renderExampleDiagrams,50);},
   '/reset':()=>showPublicScreen('resetScreen'),
   '/club-profiles':()=>currentUser&&isClubPlan()?openClubProfiles():navigate('/dashboard'),
 };
@@ -3377,25 +3601,41 @@ document.addEventListener('DOMContentLoaded',function(){
           </div>
         </div>
         <div class="ex-card-body">
+          <div class="ex-diagram-wrap">
+            <div id="ex-p1-diag1"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
+          </div>
           <div class="ex-phase" style="background:rgba(0,194,255,0.06);border-color:#00C2FF">
             <div class="ex-phase-label" style="color:#00C2FF">Activation · 7 mins</div>
             <div class="ex-phase-title">Strike Mechanics Warm-Up</div>
-            <div class="ex-phase-desc">From 8m: 10 soft inside-foot shots into goal focusing purely on technique — locked ankle, non-kicking foot beside ball, head down through contact. Build confidence before adding pace.</div>
+            <div class="ex-phase-desc">From 8m: 10 soft inside-foot shots into goal. Locked ankle, non-kicking foot beside ball, head down through contact.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-p1-diag2"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,179,0,0.06);border-color:#FFB300">
             <div class="ex-phase-label" style="color:#FFB300">Technical · 18 mins</div>
             <div class="ex-phase-title">Four Corner Target Drill</div>
-            <div class="ex-phase-desc">Goal divided into 4 zones: TL, TR, BL, BR. From 16m: 5 shots per zone — inside foot for low targets, laces for upper corners. 30s rest between zones. Track score each set.</div>
+            <div class="ex-phase-desc">Goal divided into TL, TR, BL, BR zones. From 16m: 5 shots per zone — inside foot for low targets, laces for upper corners.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-p1-diag3"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(0,230,118,0.06);border-color:#00E676">
             <div class="ex-phase-label" style="color:#00E676">Game Scenario · 13 mins</div>
             <div class="ex-phase-title">Movement & Finish Under Pressure</div>
-            <div class="ex-phase-desc">Start 20m from goal. Roll ball to the side, accelerate onto it, set and shoot within 3 seconds. Vary approach angle: straight, right channel, left channel. 10 shots total.</div>
+            <div class="ex-phase-desc">Start 20m from goal. Roll ball to the side, accelerate onto it, set and shoot within 3 seconds.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-p1-diag4"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,109,0,0.06);border-color:#FF6D00">
             <div class="ex-phase-label" style="color:#FF6D00">Cool Down · 7 mins</div>
             <div class="ex-phase-title">Deliberate Penalty Practice</div>
-            <div class="ex-phase-desc">10 slow, deliberate penalty kicks — one target per kick, pure placement over power. Finish with quad and hip flexor stretches.</div>
+            <div class="ex-phase-desc">10 slow deliberate penalty kicks — one target per kick, pure placement over power.</div>
           </div>
         </div>
         <div class="ex-cta-bar">
@@ -3417,25 +3657,41 @@ document.addEventListener('DOMContentLoaded',function(){
           </div>
         </div>
         <div class="ex-card-body">
+          <div class="ex-diagram-wrap">
+            <div id="ex-p2-diag1"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
+          </div>
           <div class="ex-phase" style="background:rgba(0,194,255,0.06);border-color:#00C2FF">
             <div class="ex-phase-label" style="color:#00C2FF">Activation · 5 mins</div>
             <div class="ex-phase-title">Sole Roll Wake-Up</div>
-            <div class="ex-phase-desc">Toe-taps on ball 60 seconds alternating feet. Sole rolls forward and back, then side to side. Build from slow to match pace over 3 minutes. No equipment needed.</div>
+            <div class="ex-phase-desc">Toe-taps on ball 60 seconds alternating feet. Sole rolls forward and back, then side to side. Build from slow to match pace. No equipment needed.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-p2-diag2"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,179,0,0.06);border-color:#FFB300">
             <div class="ex-phase-label" style="color:#FFB300">Technical · 12 mins</div>
             <div class="ex-phase-title">Inside-Outside Cone Weave</div>
-            <div class="ex-phase-desc">6 household items as markers, 1m apart. Weave using inside and outside of right foot for 3 reps, left foot 3 reps, then alternate. Focus on sharp direction changes, not speed.</div>
+            <div class="ex-phase-desc">6 markers 1m apart. Weave using inside and outside of right foot for 3 reps, left foot 3 reps, then alternate.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-p2-diag3"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(0,230,118,0.06);border-color:#00E676">
             <div class="ex-phase-label" style="color:#00E676">Game Scenario · 8 mins</div>
             <div class="ex-phase-title">Box Dribble Challenge</div>
-            <div class="ex-phase-desc">Mark a 5m x 5m square. 60-second timer — dribble continuously, changing direction every time you reach a marker. Count touches. Try to beat your score each round.</div>
+            <div class="ex-phase-desc">5m x 5m square. 60-second timer — dribble continuously changing direction at every marker. Count touches.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-p2-diag4"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,109,0,0.06);border-color:#FF6D00">
             <div class="ex-phase-label" style="color:#FF6D00">Cool Down · 5 mins</div>
             <div class="ex-phase-title">Free Touch & Stretch</div>
-            <div class="ex-phase-desc">3 minutes slow relaxed dribbling — no rules, just enjoy the feel. Finish with quad and hip flexor stretches.</div>
+            <div class="ex-phase-desc">3 minutes slow relaxed dribbling. Finish with quad and hip flexor stretches.</div>
           </div>
         </div>
         <div class="ex-cta-bar">
@@ -3460,25 +3716,41 @@ document.addEventListener('DOMContentLoaded',function(){
           </div>
         </div>
         <div class="ex-card-body">
+          <div class="ex-diagram-wrap">
+            <div id="ex-c1-diag1"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
+          </div>
           <div class="ex-phase" style="background:rgba(0,194,255,0.06);border-color:#00C2FF">
             <div class="ex-phase-label" style="color:#00C2FF">Activation · 8 mins</div>
             <div class="ex-phase-title">Press Trigger Walkthrough</div>
-            <div class="ex-phase-desc">Walk through 3 press triggers as a team: back pass to GK, player faces own goal, heavy first touch. At each trigger the nearest player presses and the rest compact. Slow and deliberate — nail the shape before adding pace.</div>
+            <div class="ex-phase-desc">Walk through 3 triggers: back pass to GK, player faces own goal, heavy first touch. At each trigger the nearest presses, the rest compact.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-c1-diag2"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,179,0,0.06);border-color:#FFB300">
             <div class="ex-phase-label" style="color:#FFB300">Technical · 24 mins</div>
             <div class="ex-phase-title">6v6 Shadow Press Drill</div>
-            <div class="ex-phase-desc">6 v 6 shadow play — pressing team presses shape but does not tackle. Team in possession plays out from the back. Pressing team learns press shape and trigger recognition without the chaos of live defending.</div>
+            <div class="ex-phase-desc">6 v 6 shadow play — pressing team presses shape but does not tackle. Team in possession plays out from the back.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-c1-diag3"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(0,230,118,0.06);border-color:#00E676">
             <div class="ex-phase-label" style="color:#00E676">Game Scenario · 20 mins</div>
             <div class="ex-phase-title">Press to Score — 8v8</div>
-            <div class="ex-phase-desc">8 v 8 full game. When the team wins the ball high up the pitch, they score a bonus goal. Forces maximum intensity in the press and rewards winning the ball in dangerous positions.</div>
+            <div class="ex-phase-desc">8 v 8. Ball won high up pitch = bonus goal for pressing team. Forces maximum press intensity.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-c1-diag4"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,109,0,0.06);border-color:#FF6D00">
             <div class="ex-phase-label" style="color:#FF6D00">Cool Down · 8 mins</div>
             <div class="ex-phase-title">Shape Review & Debrief</div>
-            <div class="ex-phase-desc">Walk through pressing shape one final time at walking pace. Team discussion: which press triggers worked best, what broke the press, two things done well.</div>
+            <div class="ex-phase-desc">Walk through pressing shape one final time. Discuss which triggers worked, what broke the press, two things done well.</div>
           </div>
         </div>
         <div class="ex-cta-bar">
@@ -3500,25 +3772,41 @@ document.addEventListener('DOMContentLoaded',function(){
           </div>
         </div>
         <div class="ex-card-body">
+          <div class="ex-diagram-wrap">
+            <div id="ex-c2-diag1"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
+          </div>
           <div class="ex-phase" style="background:rgba(0,194,255,0.06);border-color:#00C2FF">
             <div class="ex-phase-label" style="color:#00C2FF">Activation · 5 mins</div>
             <div class="ex-phase-title">Light Jog & Dynamic Mobility</div>
-            <div class="ex-phase-desc">Easy jog around pitch perimeter, reducing to walk. Leg swings forward and lateral, walking lunges with rotation, ankle circles. Heart rate stays low throughout — this is recovery, not fitness.</div>
+            <div class="ex-phase-desc">Easy jog around pitch perimeter, reducing to walk. Leg swings, walking lunges with rotation, ankle circles. Heart rate stays low.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-c2-diag2"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,179,0,0.06);border-color:#FFB300">
             <div class="ex-phase-label" style="color:#FFB300">Technical · 12 mins</div>
             <div class="ex-phase-title">Possession Rondo — Low Intensity</div>
-            <div class="ex-phase-desc">6+1 v 2 Rondo in a large grid. Emphasis on ball movement and communication only — no pressing intensity. Players move freely and enjoy the football. Touch count unlimited.</div>
+            <div class="ex-phase-desc">6+2 v 2 Rondo in a large grid. Emphasis on ball movement and communication — no pressing intensity.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-c2-diag3"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(0,230,118,0.06);border-color:#00E676">
             <div class="ex-phase-label" style="color:#00E676">Game Scenario · 8 mins</div>
             <div class="ex-phase-title">Match Review Discussion</div>
-            <div class="ex-phase-desc">Team circle. Coach leads open discussion: what went well, one moment each player is proud of, one thing the team will improve next week. Keep it positive and forward-looking.</div>
+            <div class="ex-phase-desc">Team circle. What went well, one moment each player is proud of, one thing to improve next week.</div>
+          </div>
+          <div class="ex-diagram-wrap">
+            <div id="ex-c2-diag4"><div style="height:150px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(180,210,240,0.3);font-size:11px">Loading diagram…</div></div>
+            <div class="ex-diagram-key"><div class="ex-key-item"><div class="ex-key-dot" style="background:#00C2FF;color:#000">P</div>Player</div><div class="ex-key-item"><div class="ex-key-dot" style="background:#FF4D6A;color:#fff">D</div>Defender</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#00C2FF" stroke-width="2"/><polygon points="16,2 22,5 16,8" fill="#00C2FF"/></svg>Pass</div><div class="ex-key-item"><svg width="22" height="10"><line x1="1" y1="5" x2="18" y2="5" stroke="#FFB300" stroke-width="2" stroke-dasharray="3,2"/><polygon points="16,2 22,5 16,8" fill="#FFB300"/></svg>Run</div><div class="ex-key-item"><span style="font-size:11px;color:#FFB300">&#9650;</span>Cone</div></div>
           </div>
           <div class="ex-phase" style="background:rgba(255,109,0,0.06);border-color:#FF6D00">
             <div class="ex-phase-label" style="color:#FF6D00">Cool Down · 5 mins</div>
             <div class="ex-phase-title">Full Team Static Stretch</div>
-            <div class="ex-phase-desc">Team stretching together: hamstrings, quads, calves, hip flexors, groin. 25 seconds each. End with a team huddle and one word each describing how they feel going into next week.</div>
+            <div class="ex-phase-desc">Hamstrings, quads, calves, hip flexors, groin — 25 seconds each. End: one word each for next week.</div>
           </div>
         </div>
         <div class="ex-cta-bar">
