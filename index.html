@@ -303,6 +303,26 @@ body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,
 .ex-key-line{width:18px;height:2px;flex-shrink:0}
 .ex-key-arrow{width:18px;height:2px;flex-shrink:0;position:relative}
 .ex-key-arrow::after{content:'';position:absolute;right:-1px;top:-3px;border-left:5px solid;border-top:4px solid transparent;border-bottom:4px solid transparent}
+
+/* ── SIGNUP PLAN SELECTOR ── */
+.signup-plan-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.signup-plan-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .18s;touch-action:manipulation;display:flex;align-items:center;gap:14px;position:relative}
+.signup-plan-card:hover{border-color:rgba(0,194,255,0.4);background:rgba(0,194,255,0.05)}
+.signup-plan-card.selected{border-color:var(--accent);background:rgba(0,194,255,0.08)}
+.signup-plan-card.selected::after{content:'✓';position:absolute;top:12px;right:14px;color:var(--accent);font-weight:700;font-size:15px}
+.signup-plan-icon{font-size:26px;flex-shrink:0}
+.signup-plan-info{flex:1}
+.signup-plan-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:2px}
+.signup-plan-price{font-size:13px;color:var(--accent);font-weight:700;margin-bottom:2px}
+.signup-plan-desc{font-size:11px;color:var(--muted);line-height:1.4}
+.signup-steps{display:flex;align-items:center;gap:6px;margin-bottom:20px}
+.signup-step{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.1);transition:background .2s}
+.signup-step.active{background:var(--accent)}
+.signup-step.done{background:rgba(0,194,255,0.4)}
+.signup-step-label{font-size:10px;color:var(--muted);text-align:center;margin-bottom:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.signup-selected-plan{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,194,255,0.08);border:1px solid rgba(0,194,255,0.2);border-radius:10px;margin-bottom:16px}
+.signup-selected-plan-name{font-weight:700;color:#fff;font-size:13px}
+.signup-selected-plan-price{font-size:12px;color:var(--accent)}
 .hidden{display:none!important}
 /* ── LANDING PAGE ── */
 .land-screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:0 0 60px;overflow:hidden;height:0;min-height:0}
@@ -572,22 +592,101 @@ fbq('track','PageView');
 <!-- ══════════ REGISTER ══════════ -->
 <div id="registerScreen" class="screen">
   <div class="wrap">
-    <div class="app-header">
-      <div class="app-badge">⚽ UEFA Methodology</div>
-      <h1><em>Tactiq</em></h1>
-      <p>Create your free coaching account</p>
-      <div class="header-rule"></div>
+    <div class="navbar">
+      <div class="nav-logo"><em>Tactiq</em></div>
+      <button class="nav-btn" onclick="navigate('/login')">Sign In</button>
     </div>
-    <div class="auth-card">
-      <div class="auth-title">Start Your Free Trial</div>
-      <div class="auth-sub">Get your first AI coaching session in 60 seconds — no card required</div>
-      <div class="msg" id="registerMsg"></div>
-      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="regName" type="text" placeholder="Your name"/></div>
+
+    <!-- Step progress -->
+    <div class="signup-steps" id="signupSteps">
+      <div class="signup-step active" id="signupStep1"></div>
+      <div class="signup-step" id="signupStep2"></div>
+      <div class="signup-step" id="signupStep3"></div>
+    </div>
+    <div class="signup-step-label" id="signupStepLabel">Step 1 of 3 — Choose Your Plan</div>
+
+    <div class="msg" id="registerMsg"></div>
+
+    <!-- STEP 1: Plan selection -->
+    <div id="signupPlanStep">
+      <div class="auth-title">Choose Your Plan</div>
+      <div class="auth-sub">7-day free trial on all plans · Card required · Cancel anytime</div>
+      <div class="signup-plan-grid" style="margin-top:16px">
+
+        <div class="signup-plan-card" id="spPlayer" onclick="selectSignupPlan('player')">
+          <div class="signup-plan-icon">👤</div>
+          <div class="signup-plan-info">
+            <div class="signup-plan-name">Tactiq Player</div>
+            <div class="signup-plan-price">£9.99/month after trial</div>
+            <div class="signup-plan-desc">Solo sessions · Ball mastery · Position-specific drills · PDF export</div>
+          </div>
+        </div>
+
+        <div class="signup-plan-card" id="spCoach" onclick="selectSignupPlan('coach')">
+          <div class="signup-plan-icon">📋</div>
+          <div class="signup-plan-info">
+            <div class="signup-plan-name">Tactiq Coach</div>
+            <div class="signup-plan-price">£14.99/month after trial</div>
+            <div class="signup-plan-desc">Solo + Team sessions · Coaching profile · Team tactics · Full library</div>
+          </div>
+        </div>
+
+        <div class="signup-plan-card" id="spClub" onclick="selectSignupPlan('club')">
+          <div class="signup-plan-icon">🏆</div>
+          <div class="signup-plan-info">
+            <div class="signup-plan-name">Tactiq Club</div>
+            <div class="signup-plan-price">£49.99/month after trial</div>
+            <div class="signup-plan-desc">Up to 12 team profiles · Full club management · All session types</div>
+          </div>
+        </div>
+
+      </div>
+      <button class="btn" id="signupPlanBtn" onclick="goToSignupStep2()" disabled style="width:100%;opacity:0.4">Continue →</button>
+      <div class="auth-switch" style="margin-top:12px">Already have an account? <a onclick="navigate('/login')">Sign in</a></div>
+    </div>
+
+    <!-- STEP 2: Account details -->
+    <div id="signupAccountStep" style="display:none">
+      <div class="signup-selected-plan" id="signupSelectedPlanBadge">
+        <div style="font-size:20px" id="signupSelectedIcon">👤</div>
+        <div>
+          <div class="signup-selected-plan-name" id="signupSelectedName">Tactiq Player</div>
+          <div class="signup-selected-plan-price" id="signupSelectedPrice">£9.99/month after 7-day trial</div>
+        </div>
+        <button onclick="goToSignupStep1()" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;touch-action:manipulation">Change</button>
+      </div>
+      <div class="auth-title">Create Your Account</div>
+      <div class="auth-sub">Your details — then you'll enter card info on the next step</div>
+      <div class="form-group" style="margin-top:14px"><label class="form-label">Full Name</label><input class="form-input" id="regName" type="text" placeholder="Your name"/></div>
       <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" id="regEmail" type="email" placeholder="you@example.com"/></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="regPassword" type="password" placeholder="Min 6 characters"/></div>
-      <button class="btn" id="registerBtn" onclick="handleRegister()">Create Free Account</button>
-      <div class="auth-switch">Already have an account? <a onclick="showScreen(\'loginScreen\')">Sign in</a></div>
+      <button class="btn" id="registerBtn" onclick="handleRegister()" style="width:100%">Continue to Payment →</button>
+      <button onclick="goToSignupStep1()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;touch-action:manipulation">← Back</button>
     </div>
+
+    <!-- STEP 3: Payment (handled by Stripe - shown after account created) -->
+    <div id="signupPaymentStep" style="display:none">
+      <div class="signup-selected-plan" id="signupSelectedPlanBadge2">
+        <div style="font-size:20px" id="signupSelectedIcon2">👤</div>
+        <div>
+          <div class="signup-selected-plan-name" id="signupSelectedName2">Tactiq Player</div>
+          <div class="signup-selected-plan-price" id="signupSelectedPrice2">£9.99/month after 7-day trial</div>
+        </div>
+      </div>
+      <div class="auth-title">Start Your Free Trial</div>
+      <div class="auth-sub">Your card will not be charged today. Trial ends in 7 days.</div>
+      <div style="background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);border-radius:12px;padding:14px;margin:16px 0">
+        <div style="font-size:12px;color:rgba(180,210,240,0.8);line-height:1.7">
+          ✅ <strong>Full access</strong> for 7 days — free<br>
+          ✅ <strong>Cancel anytime</strong> before day 7<br>
+          ✅ <strong>No charge today</strong> — card saved for after trial<br>
+          ✅ <strong>Automatic billing</strong> starts after trial ends
+        </div>
+      </div>
+      <button class="btn" id="signupPayBtn" onclick="handleSignupPayment()" style="width:100%">Enter Card Details →</button>
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">🔒 Secured by Stripe · SSL encrypted</div>
+    </div>
+
   </div>
 </div>
 
@@ -2654,6 +2753,104 @@ async function handleLogin(){
   btn.disabled = false;
 }
 
+
+// ═══════════════════════════════════════════════════════
+// MULTI-STEP SIGNUP FLOW
+// ═══════════════════════════════════════════════════════
+var signupSelectedPlan = '';
+
+var SIGNUP_PLANS = {
+  player: { icon:'👤', name:'Tactiq Player', price:'£9.99/month after 7-day trial',  priceId: STRIPE_PLAYER_PRICE },
+  coach:  { icon:'📋', name:'Tactiq Coach',  price:'£14.99/month after 7-day trial', priceId: STRIPE_COACH_PRICE  },
+  club:   { icon:'🏆', name:'Tactiq Club',   price:'£49.99/month after 7-day trial', priceId: STRIPE_CLUB_PRICE   },
+};
+
+function selectSignupPlan(plan){
+  signupSelectedPlan = plan;
+  // Update selected styling
+  ['player','coach','club'].forEach(function(p){
+    var el = document.getElementById('sp' + p.charAt(0).toUpperCase() + p.slice(1));
+    if(el) el.classList.toggle('selected', p === plan);
+  });
+  // Enable continue button
+  var btn = document.getElementById('signupPlanBtn');
+  if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+}
+
+function goToSignupStep1(){
+  document.getElementById('signupPlanStep').style.display = 'block';
+  document.getElementById('signupAccountStep').style.display = 'none';
+  document.getElementById('signupPaymentStep').style.display = 'none';
+  updateSignupStepUI(1);
+}
+
+function goToSignupStep2(){
+  if(!signupSelectedPlan){ return; }
+  var p = SIGNUP_PLANS[signupSelectedPlan];
+  // Update badges
+  ['','2'].forEach(function(suffix){
+    var icon = document.getElementById('signupSelectedIcon'+suffix);
+    var name = document.getElementById('signupSelectedName'+suffix);
+    var price = document.getElementById('signupSelectedPrice'+suffix);
+    if(icon) icon.textContent = p.icon;
+    if(name) name.textContent = p.name;
+    if(price) price.textContent = p.price;
+  });
+  document.getElementById('signupPlanStep').style.display = 'none';
+  document.getElementById('signupAccountStep').style.display = 'block';
+  document.getElementById('signupPaymentStep').style.display = 'none';
+  updateSignupStepUI(2);
+  // Focus name field
+  setTimeout(function(){ var n=document.getElementById('regName'); if(n)n.focus(); }, 100);
+}
+
+function goToSignupStep3(){
+  document.getElementById('signupPlanStep').style.display = 'none';
+  document.getElementById('signupAccountStep').style.display = 'none';
+  document.getElementById('signupPaymentStep').style.display = 'block';
+  updateSignupStepUI(3);
+}
+
+function updateSignupStepUI(step){
+  for(var i=1;i<=3;i++){
+    var el = document.getElementById('signupStep'+i);
+    if(!el) continue;
+    if(i < step) el.className = 'signup-step done';
+    else if(i === step) el.className = 'signup-step active';
+    else el.className = 'signup-step';
+  }
+  var labels = {1:'Step 1 of 3 — Choose Your Plan', 2:'Step 2 of 3 — Create Account', 3:'Step 3 of 3 — Start Trial'};
+  var lbl = document.getElementById('signupStepLabel');
+  if(lbl) lbl.textContent = labels[step] || '';
+}
+
+async function handleSignupPayment(){
+  if(!currentUser || !signupSelectedPlan){ return; }
+  var p = SIGNUP_PLANS[signupSelectedPlan];
+  var btn = document.getElementById('signupPayBtn');
+  if(btn){ btn.textContent = 'Opening Stripe...'; btn.disabled = true; }
+  try{
+    var res = await fetch('https://bhkrvdzpwowbozgyiwmq.supabase.co/functions/v1/quick-action',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+      body:JSON.stringify({
+        priceId: p.priceId,
+        customerEmail: currentUser.email,
+        successUrl: window.location.origin+'/?sub=success',
+        cancelUrl: window.location.origin+'/signup',
+      }),
+    });
+    var json = await res.json();
+    if(json.error) throw new Error(json.error);
+    var result = await stripe.redirectToCheckout({sessionId: json.sessionId});
+    if(result.error) throw new Error(result.error.message);
+  }catch(e){
+    var msg = document.getElementById('registerMsg');
+    if(msg) showMsg(msg,'error','Payment error: '+e.message);
+    if(btn){ btn.textContent = 'Enter Card Details →'; btn.disabled = false; }
+  }
+}
+
 async function handleRegister(){
   const name  = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -2662,16 +2859,21 @@ async function handleRegister(){
   const btn   = document.getElementById('registerBtn');
   if(!name || !email || !pass){ showMsg(msg,'error','Please fill in all fields.'); return; }
   if(pass.length < 6){ showMsg(msg,'error','Password must be at least 6 characters.'); return; }
-  btn.textContent = 'Creating...';
+  if(!signupSelectedPlan){ showMsg(msg,'error','Please go back and select a plan.'); return; }
+  btn.textContent = 'Creating account...';
   btn.disabled = true;
   try {
     const { data, error } = await sb.auth.signUp({ email: email, password: pass, options: { data: { full_name: name } } });
     if(error){ showMsg(msg,'error', error.message); }
-    else { showMsg(msg,'success','Account created! Check your email to confirm, then sign in.'); }
+    else {
+      // Account created — set currentUser and proceed to payment step
+      if(data && data.user){ currentUser = data.user; }
+      goToSignupStep3();
+    }
   } catch(e) {
     showMsg(msg,'error','Error: ' + e.message);
   }
-  btn.textContent = 'Create Free Account';
+  btn.textContent = 'Continue to Payment →';
   btn.disabled = false;
 }
 
