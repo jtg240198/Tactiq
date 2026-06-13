@@ -3965,15 +3965,15 @@ function renderPlanDashboard(){
       <div class="plan-dash-grid">
         <div class="plan-dash-btn" onclick="tryStartSession()">
           <div class="plan-dash-icon">⚡</div>
-          <div class="plan-dash-label">Build New Session</div>
+          <div class="plan-dash-label">Build Session</div>
         </div>
-        <div class="plan-dash-btn" onclick="tryStartSession()">
-          <div class="plan-dash-icon">📋</div>
-          <div class="plan-dash-label">Session Library</div>
+        <div class="plan-dash-btn" onclick="openSetPieceDesigner()">
+          <div class="plan-dash-icon">🎯</div>
+          <div class="plan-dash-label">Set Pieces</div>
         </div>
-        <div class="plan-dash-btn" onclick="showScreen('profileSetupScreen')">
+        <div class="plan-dash-btn" onclick="openClubProfiles()">
           <div class="plan-dash-icon">👥</div>
-          <div class="plan-dash-label">Coaches</div>
+          <div class="plan-dash-label">Team Profiles</div>
         </div>
         <div class="plan-dash-btn" onclick="showScreen('profileScreen')">
           <div class="plan-dash-icon">🏆</div>
@@ -3991,7 +3991,7 @@ function renderPlanDashboard(){
           <div class="plan-dash-icon">👥</div>
           <div class="plan-dash-label">Team Session Builder</div>
         </div>
-        <div class="plan-dash-btn" onclick="showScreen('profileSetupScreen')">
+        <div class="plan-dash-btn" onclick="document.getElementById('sessionsList').scrollIntoView({behavior:'smooth'})">
           <div class="plan-dash-icon">📋</div>
           <div class="plan-dash-label">Saved Sessions</div>
         </div>
