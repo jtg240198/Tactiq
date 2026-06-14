@@ -3639,17 +3639,30 @@ async function saveClubTeamProfile(){
   var msg=document.getElementById('clubEditMsg');
   var editIdx=parseInt(document.getElementById('clubEditIndex').value);
   if(!name||!age||!ability){showMsg(msg,'error','Please fill in team name, age group and ability.');return;}
+  var btn=document.querySelector('#clubTeamEditScreen .btn');
+  if(btn){btn.textContent='Saving...';btn.disabled=true;}
   var profile={user_id:currentUser.id,name:name,age:age,ability:ability,formation:formation,notes:notes,equip:'Football',players:'',frequency:'',goal:notes,updated_at:new Date().toISOString()};
-  if(editIdx>=0&&clubTeamProfiles[editIdx]){
-    var existing=clubTeamProfiles[editIdx];
-    await sb.from('coaching_profiles').update(profile).eq('id',existing.id);
-    clubTeamProfiles[editIdx]=Object.assign({},existing,profile);
-  }else{
-    var res=await sb.from('coaching_profiles').insert([profile]).select();
-    if(res.data&&res.data[0])clubTeamProfiles.push(res.data[0]);
+  try{
+    if(editIdx>=0&&clubTeamProfiles[editIdx]){
+      var existing=clubTeamProfiles[editIdx];
+      var upd=await sb.from('coaching_profiles').update(profile).eq('id',existing.id);
+      if(upd.error)throw new Error(upd.error.message);
+      clubTeamProfiles[editIdx]=Object.assign({},existing,profile);
+    }else{
+      var res=await sb.from('coaching_profiles').insert([profile]).select();
+      if(res.error)throw new Error(res.error.message);
+      if(res.data&&res.data[0])clubTeamProfiles.push(res.data[0]);
+      else if(!res.error){
+        // insert succeeded but no data returned — reload profiles
+        await loadClubTeamProfiles();
+      }
+    }
+    renderClubProfilesGrid();
+    showScreen('clubProfilesScreen');
+  }catch(e){
+    showMsg(msg,'error','Save failed: '+e.message);
+    if(btn){btn.textContent='Save Team';btn.disabled=false;}
   }
-  renderClubProfilesGrid();
-  showScreen('clubProfilesScreen');
 }
 
 async function deleteClubTeamProfile(){
