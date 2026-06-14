@@ -1701,12 +1701,22 @@ function renderBuilderPitch(){
   });
 
   svg.innerHTML=html;
-  svg.onclick=function(e){
-    var rect=svg.getBoundingClientRect();
-    var x=Math.round((e.clientX-rect.left)*(200/rect.width));
-    var y=Math.round((e.clientY-rect.top)*(280/rect.height));
-    handleBuilderClick(x,y);
-  };
+  if(!svg._tacticBuilderBound){
+    svg._tacticBuilderBound=true;
+    function _svgTap(e){
+      e.preventDefault();e.stopPropagation();
+      var svgEl=document.getElementById('spBuilderSvg');
+      if(!svgEl)return;
+      var rect=svgEl.getBoundingClientRect();
+      var cx=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
+      var cy=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+      var x=Math.round((cx-rect.left)*(200/rect.width));
+      var y=Math.round((cy-rect.top)*(280/rect.height));
+      handleBuilderClick(x,y);
+    }
+    svg.addEventListener('click',_svgTap,false);
+    svg.addEventListener('touchend',_svgTap,{passive:false});
+  }
 }
 
 function handleBuilderClick(x,y){
@@ -3792,6 +3802,10 @@ function handleContinue(){
 // SESSION START ROUTING
 // ══════════════════════════════════════════════
 function tryStartSession(){
+  if(isClubPlan()&&currentUser){loadClubTeamProfiles().then(function(){_doTryStartSession();});return;}
+  _doTryStartSession();
+}
+function _doTryStartSession(){
   if(userPlan==='free'&&monthSessions>=3){showScreen('plansScreen');return;}
   STEPS=getSteps();
   if(isClubPlan()){openClubProfiles();return;}
@@ -4171,10 +4185,7 @@ function renderPlanDashboard(){
           <div class="plan-dash-icon">📋</div>
           <div class="plan-dash-label">Session History</div>
         </div>
-        <div class="plan-dash-btn" onclick="showScreen('profileScreen')">
-          <div class="plan-dash-icon">🏆</div>
-          <div class="plan-dash-label">Account</div>
-        </div>
+
       </div>`;
   } else if(isTeam){
     buttonsHTML = `
@@ -4319,7 +4330,7 @@ async function runAiAssistant(){
   var btn=document.getElementById('aiRunBtn'),res=document.getElementById('aiResultArea'),rc=document.getElementById('aiResultContent'),err=document.getElementById('aiErrorMsg');
   btn.textContent='Generating...';btn.disabled=true;err.style.display='none';res.style.display='none';
   try{
-    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'You are an expert UEFA football coaching assistant. Respond with a complete structured session plan including SESSION TITLE, DURATION, PLAYERS, AGE GROUP, FOCUS, WARM UP (10-15 min), TECHNICAL PHASE (15-20 min), GAME SCENARIO (20-25 min), COACHING POINTS (5 bullet points starting with -), COOL DOWN, KEY QUESTIONS FOR PLAYERS. Be specific and immediately usable by coaches.',messages:[{role:'user',content:prompt}]})});
+    var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
     var d=await r.json();if(!d.content||!d.content[0])throw new Error('No response');
     aiSessionResult=d.content[0].text;
     rc.innerHTML=formatAiResult(aiSessionResult);res.style.display='block';res.scrollIntoView({behavior:'smooth'});
@@ -4353,6 +4364,26 @@ function renderSessionHistory(){
 }
 function viewHistorySession(i){
   var s=userSessions[i];if(!s)return;
+  // Build display content from whatever fields exist
+  var bodyText='';
+  if(s.content){bodyText=s.content;}
+  else{
+    if(s.overview)bodyText+='OVERVIEW\n'+s.overview+'\n\n';
+    if(s.focus)bodyText+='FOCUS: '+s.focus+'\n';
+    if(s.age)bodyText+='AGE GROUP: '+s.age+'\n';
+    if(s.time)bodyText+='DURATION: '+s.time+'\n';
+    if(s.intensity)bodyText+='INTENSITY: '+s.intensity+'\n\n';
+    if(s.tip)bodyText+='COACHING TIP\n'+s.tip+'\n\n';
+    if(s.phases&&s.phases.length){
+      s.phases.forEach(function(ph){
+        bodyText+=(ph.name||'Phase').toUpperCase()+'\n';
+        if(ph.desc)bodyText+=ph.desc+'\n';
+        if(ph.points&&ph.points.length)bodyText+='Coaching points:\n'+ph.points.map(function(p){return '- '+p;}).join('\n')+'\n';
+        bodyText+='\n';
+      });
+    }
+    if(!bodyText)bodyText='Session details not available.';
+  }
   var overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,15,26,0.95);z-index:9999;overflow-y:auto;padding:20px';
   var wrap=document.createElement('div');wrap.style.maxWidth='600px';wrap.style.margin='0 auto';
@@ -4360,7 +4391,7 @@ function viewHistorySession(i){
   closeBtn.style.cssText='background:#00C2FF;border:none;color:#0A254A;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;margin-bottom:16px;touch-action:manipulation';
   closeBtn.onclick=function(){document.body.removeChild(overlay);};
   var h=document.createElement('h2');h.textContent=s.title||s.focus||'Session';h.style.cssText='font-size:18px;font-weight:800;color:#fff;margin:0 0 12px';
-  var bd=document.createElement('div');bd.textContent=s.content||'No content.';bd.style.cssText='font-size:13px;line-height:1.7;color:#c8d8e8;white-space:pre-wrap';
+  var bd=document.createElement('div');bd.textContent=bodyText;bd.style.cssText='font-size:13px;line-height:1.7;color:#c8d8e8;white-space:pre-wrap';
   wrap.appendChild(closeBtn);wrap.appendChild(h);wrap.appendChild(bd);overlay.appendChild(wrap);document.body.appendChild(overlay);
 }
 // ══ WEEKLY PLANNER ════════════════════════════════
@@ -4376,7 +4407,22 @@ function renderWeeklyPlanner(){
     '<button class="week-day-btn" data-day="'+d[0]+'" onclick="editWeekDay(this.dataset.day)">'+( ses?'Edit':'Add')+'</button></div>';
   }).join('');
 }
-function editWeekDay(k){var c=weeklyPlan[k]||'';var v=prompt(k.charAt(0).toUpperCase()+k.slice(1)+' session:',c);if(v===null)return;weeklyPlan[k]=v.trim();renderWeeklyPlanner();}
+function editWeekDay(k){
+  var options='Choose a session or type your own:\n';
+  var label=k.charAt(0).toUpperCase()+k.slice(1);
+  if(userSessions&&userSessions.length){
+    userSessions.slice(0,8).forEach(function(s,i){options+=(i+1)+'. '+(s.title||s.focus||'Session '+(i+1))+'\n';});
+    options+='\nOr type your own session name:';
+  }
+  var v=prompt(label+' — '+options,weeklyPlan[k]||'');
+  if(v===null)return;
+  // Check if user entered a number to pick from list
+  var num=parseInt(v);
+  if(num>=1&&num<=8&&userSessions&&userSessions[num-1]){
+    v=userSessions[num-1].title||userSessions[num-1].focus||v;
+  }
+  weeklyPlan[k]=v.trim();renderWeeklyPlanner();
+}
 function saveWeeklyPlan(){try{localStorage.setItem('twp_'+(currentUser&&currentUser.id),JSON.stringify(weeklyPlan));alert('Week plan saved!');}catch(e){alert('Could not save.');}}
 
 document.addEventListener('DOMContentLoaded',function(){
