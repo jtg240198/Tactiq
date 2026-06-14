@@ -3635,13 +3635,12 @@ async function saveClubTeamProfile(){
   var age=document.getElementById('clubTeamAge').value;
   var ability=document.getElementById('clubTeamAbility').value;
   var formation=document.getElementById('clubTeamFormation').value;
-  var notes=document.getElementById('clubTeamNotes').value.trim();
   var msg=document.getElementById('clubEditMsg');
   var editIdx=parseInt(document.getElementById('clubEditIndex').value);
   if(!name||!age||!ability){showMsg(msg,'error','Please fill in team name, age group and ability.');return;}
   var btn=document.querySelector('#clubTeamEditScreen .btn');
   if(btn){btn.textContent='Saving...';btn.disabled=true;}
-  var profile={user_id:currentUser.id,name:name,age:age,ability:ability,formation:formation,notes:notes,equip:'Football',players:'',frequency:'',goal:notes,updated_at:new Date().toISOString()};
+  var profile={user_id:currentUser.id,name:name,age:age,ability:ability,formation:formation,equip:'Football',players:'',frequency:'',goal:'',updated_at:new Date().toISOString()};
   try{
     if(editIdx>=0&&clubTeamProfiles[editIdx]){
       var existing=clubTeamProfiles[editIdx];
