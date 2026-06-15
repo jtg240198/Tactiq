@@ -1270,7 +1270,7 @@ fbq('track','PageView');
 
       <!-- Pitch canvas -->
       <div class="sp-builder-pitch" id="spBuilderPitch">
-        <svg id="spBuilderSvg" viewBox="0 0 200 280" style="width:100%;touch-action:none;cursor:crosshair"></svg>
+        <svg id="spBuilderSvg" viewBox="0 0 200 280" style="width:100%;touch-action:none;cursor:crosshair;pointer-events:all;display:block"></svg>
       </div>
 
       <!-- Key -->
@@ -1632,7 +1632,15 @@ function exportSetPiecePDF(){
 
 function selectBuilderType(type){spBuilderType=type;['sptCorner','sptFree','sptThrow'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('selected');});var map={'corner':'sptCorner','freekick':'sptFree','throwin':'sptThrow'};var el=document.getElementById(map[type]);if(el)el.classList.add('selected');}
 function selectBuilderSide(side){spBuilderSide=side;['spSideLeft','spSideCentre','spSideRight'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('active');});var map={'left':'spSideLeft','centre':'spSideCentre','right':'spSideRight'};var el=document.getElementById(map[side]);if(el)el.classList.add('active');}
-function goToBuilderStep2(){if(!spBuilderType||!spBuilderSide){alert('Please select both a type and a side.');return;}document.getElementById('spBuilderStep1').style.display='none';document.getElementById('spBuilderStep2').style.display='block';renderBuilderPitch();}
+function goToBuilderStep2(){
+  if(!spBuilderType||!spBuilderSide){alert('Please select both a type and a side.');return;}
+  document.getElementById('spBuilderStep1').style.display='none';
+  document.getElementById('spBuilderStep2').style.display='block';
+  // Reset listener flag so it re-attaches to fresh SVG element
+  var svg=document.getElementById('spBuilderSvg');
+  if(svg) svg._tacticBuilderBound=false;
+  renderBuilderPitch();
+}
 function goToBuilderStep3(){document.getElementById('spBuilderStep2').style.display='none';document.getElementById('spBuilderStep3').style.display='block';}
 function setBuilderTool(tool){spBuilderTool=tool;spBuilderRunStart=null;
   var allTools=['toolAttacker','toolDefender','toolGk','toolBall','toolPass','toolRun','toolShot','toolErase'];
@@ -1769,13 +1777,6 @@ function builderUndo(){
   renderBuilderPitch();
 }
 
-function handleBuilderClick(x,y){
-  if(spBuilderTool==='erase'){var minDist=999,minIdx=-1;spBuilderElements.forEach(function(el,i){var ex=el.x||el.x1||0,ey=el.y||el.y1||0,d=Math.sqrt((ex-x)*(ex-x)+(ey-y)*(ey-y));if(d<minDist){minDist=d;minIdx=i;}});if(minIdx>=0&&minDist<20)spBuilderElements.splice(minIdx,1);renderBuilderPitch();return;}
-  if(spBuilderTool==='run'||spBuilderTool==='zone'){if(!spBuilderRunStart){spBuilderRunStart={x:x,y:y};}else{spBuilderElements.push({type:spBuilderTool,x1:spBuilderRunStart.x,y1:spBuilderRunStart.y,x2:x,y2:y});spBuilderRunStart=null;}renderBuilderPitch();return;}
-  spBuilderPlayerCount++;
-  var label=spBuilderTool==='attacker'?('A'+spBuilderPlayerCount):spBuilderTool==='defender'?('D'+spBuilderPlayerCount):'GK';
-  spBuilderElements.push({type:spBuilderTool,x:x,y:y,label:label});renderBuilderPitch();
-}
 
 function clearBuilderPitch(){spBuilderElements=[];spBuilderPlayerCount=0;spBuilderRunStart=null;renderBuilderPitch();}
 
