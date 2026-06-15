@@ -3600,7 +3600,8 @@ let activeClubProfileIndex=0;
 
 async function loadClubTeamProfiles(){
   if(!currentUser)return;
-  const{data}=await sb.from('coaching_profiles').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:true});
+  const{data,error}=await sb.from('coaching_profiles').select('*').eq('user_id',currentUser.id).order('updated_at',{ascending:true});
+  if(error){console.warn('loadClubTeamProfiles error:',error.message);clubTeamProfiles=[];return;}
   clubTeamProfiles=data||[];
 }
 
