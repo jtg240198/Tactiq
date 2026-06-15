@@ -3599,7 +3599,7 @@ let clubTeamProfiles=[];
 let activeClubProfileIndex=0;
 
 async function loadClubTeamProfiles(){
-  if(!currentUser||!isClubPlan())return;
+  if(!currentUser)return;
   const{data}=await sb.from('coaching_profiles').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:true});
   clubTeamProfiles=data||[];
 }
@@ -3704,6 +3704,8 @@ async function deleteClubTeamProfile(){
 }
 
 async function openClubProfiles(){
+  if(!currentUser)return;
+  await loadUserPlan(); // Ensure plan is loaded before checking profiles
   await loadClubTeamProfiles();
   renderClubProfilesGrid();
   showScreen('clubProfilesScreen');
