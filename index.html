@@ -4498,8 +4498,26 @@ function formatAiResult(text){
 async function saveAiSession(){
   if(!aiSessionResult||!currentUser)return;
   var m=aiSessionResult.match(/SESSION TITLE:\s*(.+)/);var title=m?m[1].trim():'AI Generated Session';
-  try{await sb.from('sessions').insert([{user_id:currentUser.id,title:title,content:aiSessionResult,focus:'AI Generated',category:'AI Assistant',plan_type:userPlan,created_at:new Date().toISOString()}]);alert('Session saved to history!');}
-  catch(e){alert('Could not save session.');}
+  try{
+    var res=await sb.from('sessions').insert([{
+      user_id:currentUser.id,
+      title:title,
+      overview:aiSessionResult,
+      focus:'AI Generated',
+      category:'AI Assistant',
+      created_at:new Date().toISOString()
+    }]).select();
+    if(res.error){
+      console.error('saveAiSession error:',res.error);
+      alert('Could not save session: '+res.error.message);
+      return;
+    }
+    if(res.data&&res.data[0]){userSessions.unshift(res.data[0]);}
+    alert('Session saved to history!');
+  }catch(e){
+    console.error('saveAiSession exception:',e);
+    alert('Could not save session: '+e.message);
+  }
 }
 // ══ SESSION HISTORY ══════════════════════════════
 function openSessionHistory(){document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});document.getElementById('sessionHistoryScreen').classList.add('active');renderSessionHistory();window.scrollTo(0,0);}
@@ -4624,15 +4642,22 @@ async function runFitnessAssistant(){
   var btn=document.getElementById('fitnessRunBtn'),res=document.getElementById('fitnessResultArea'),
       rc=document.getElementById('fitnessResultContent'),err=document.getElementById('fitnessErrorMsg');
   btn.textContent='Generating...';btn.disabled=true;err.style.display='none';
-  var sys='You are an expert football Strength & Conditioning coach following UEFA and sports science best practice. Respond with a structured fitness/S&C session including SESSION TITLE, FOCUS, DURATION, PLAYERS, EQUIPMENT, then PHASES as a list, each phase formatted exactly as "PHASE: [name] | [duration] | [description]" on its own line, then COACHING POINTS (bullet points starting with -), then INJURY CONSIDERATIONS. Be specific, practical, and grounded in real sports science principles for football.';
+  var sys='You are an expert football Strength & Conditioning coach designing TRAINING PROGRAMMES (not medical treatment) following common sports science practice used by football clubs. You are writing general conditioning and return-to-play exercise programming for a coach to deliver, not diagnosing or treating anyone. If a prompt mentions an injury, frame your answer purely as a generic graduated strength/conditioning programme of the type a club S&C coach would design, and include a brief note that a physiotherapist or doctor should clear the player and oversee any return from injury. Respond with a structured session including SESSION TITLE, FOCUS, DURATION, PLAYERS, EQUIPMENT, then PHASES as a list, each phase formatted exactly as "PHASE: [name] | [duration] | [description]" on its own line, then COACHING POINTS (bullet points starting with -), then a closing note. Be specific, practical, and immediately usable by a coach.';
   try{
     var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:fullPrompt,system:sys})});
-    var d=await r.json();if(!d.content||!d.content[0])throw new Error('No response');
+    var d=await r.json();
+    console.log('Fitness AI raw response:',d);
+    if(d.error)throw new Error(d.error.message||d.error);
+    if(!d.content||!d.content[0])throw new Error('Unexpected response shape: '+JSON.stringify(d).slice(0,200));
     fitnessSessionResult=d.content[0].text;
     rc.innerHTML=formatFitnessResult(fitnessSessionResult);
     document.getElementById('fitnessPromptArea').style.display='none';
     res.style.display='block';res.scrollIntoView({behavior:'smooth'});
-  }catch(e){err.textContent='Could not generate session. Please try again.';err.style.display='block';}
+  }catch(e){
+    console.error('Fitness Assistant error:',e);
+    err.textContent='Could not generate session: '+e.message;
+    err.style.display='block';
+  }
   btn.textContent='✨ Generate Fitness Session';btn.disabled=false;
 }
 
@@ -4681,10 +4706,26 @@ async function saveFitnessSession(){
   var title=m?m[1].trim():'Fitness Session';
   var catLabel=FITNESS_CATEGORIES[fitnessCurrentCategory]?FITNESS_CATEGORIES[fitnessCurrentCategory].label:'Fitness';
   try{
-    await sb.from('sessions').insert([{user_id:currentUser.id,title:title,content:fitnessSessionResult,focus:catLabel,category:'Fitness & S&C',plan_type:userPlan,created_at:new Date().toISOString()}]);
+    var res=await sb.from('sessions').insert([{
+      user_id:currentUser.id,
+      title:title,
+      overview:fitnessSessionResult,
+      focus:catLabel,
+      category:'Fitness & S&C',
+      created_at:new Date().toISOString()
+    }]).select();
+    if(res.error){
+      console.error('saveFitnessSession error:',res.error);
+      alert('Could not save session: '+res.error.message);
+      return;
+    }
+    if(res.data&&res.data[0]){userSessions.unshift(res.data[0]);}
     alert('Fitness session saved!');
     navigate('/fitness');
-  }catch(e){alert('Could not save session.');}
+  }catch(e){
+    console.error('saveFitnessSession exception:',e);
+    alert('Could not save session: '+e.message);
+  }
 }
 
 function renderFitnessRecentList(){
@@ -4900,19 +4941,24 @@ async function saveEditedSession(){
   var s=userSessions[editSessionIndex];
   var newTitle=document.getElementById('editTitleInput').value.trim();
   var newContent=document.getElementById('editContentInput').value;
-  var updates={title:newTitle||s.title,edited:true,updated_at:new Date().toISOString()};
-  // If session originally used 'content' field (AI/Fitness sessions), update it directly.
-  // If it used structured phases, store the edited text back into 'content' as an override
-  // and keep original phases for reference but flag edited so display prefers content.
-  updates.content=newContent;
-  updates.elements=editBuilderElements;
+  // 'overview' is the real text column on sessions. Editing always overwrites it with
+  // the full edited text — phases/tip from the original structured session are no longer
+  // shown separately once edited, since 'overview' becomes the single source of truth.
+  var updates={
+    title:newTitle||s.title,
+    overview:newContent,
+    edited:true,
+    elements:editBuilderElements,
+    updated_at:new Date().toISOString()
+  };
   try{
-    var res=await sb.from('sessions').update(updates).eq('id',s.id);
+    var res=await sb.from('sessions').update(updates).eq('id',s.id).select();
     if(res.error)throw new Error(res.error.message);
     Object.assign(s,updates);
     alert('Session updated!');
     navigate('/history');
   }catch(e){
+    console.error('saveEditedSession error:',e);
     alert('Could not save changes: '+e.message);
   }
 }
