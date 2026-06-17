@@ -435,6 +435,37 @@ body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,
 .ai-result-section h3{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
 .ai-result-section p,.ai-result-section li{font-size:13px;color:var(--text);line-height:1.6;margin:0 0 4px}
 .ai-result-section ul{padding-left:16px;margin:0}
+
+.billing-toggle-btn{background:none;border:none;color:var(--muted);font-size:12px;font-weight:700;padding:8px 16px;border-radius:7px;cursor:pointer;touch-action:manipulation}
+.billing-toggle-btn.active{background:var(--accent);color:#06131F}
+.plan-club-pro{background:linear-gradient(135deg,#FFD600,#FF8A3D)!important;color:#1a1200!important}
+
+.plan-dash-btn-pro{background:linear-gradient(135deg,rgba(255,214,0,0.12),rgba(255,138,61,0.08));border-color:rgba(255,214,0,0.3)!important}
+.pro-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#FFD600,#FF8A3D);color:#1a1200;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;touch-action:manipulation}
+.cat-card:active{background:var(--surface2)}
+.cat-icon{font-size:22px}
+.cat-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--text);text-transform:uppercase}
+.cat-desc{font-size:10px;color:var(--muted);line-height:1.4}
+.phase-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--border)}
+.phase-row:first-of-type{border-top:none;padding-top:4px}
+.phase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.phase-text{flex:1}
+.phase-name{font-size:12px;font-weight:700;color:var(--text)}
+.phase-detail{font-size:10.5px;color:var(--muted);margin-top:1px}
+.phase-time{font-size:10px;color:var(--muted);font-weight:600}
+.load-chart{display:flex;align-items:flex-end;gap:5px;height:60px;margin:10px 0 20px}
+.load-bar{flex:1;border-radius:4px 4px 0 0;position:relative}
+.load-bar-label{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:8px;color:var(--muted)}
+
+.tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border-radius:10px;padding:4px;border:1px solid var(--border)}
+.tab{flex:1;text-align:center;padding:8px 0;border-radius:7px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;touch-action:manipulation}
+.tab.active{background:var(--accent);color:#06131F}
+.edit-banner{display:flex;align-items:center;gap:8px;background:rgba(255,214,0,0.08);border:1px solid rgba(255,214,0,0.25);border-radius:10px;padding:9px 12px;margin-bottom:14px}
+.edit-banner-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);flex-shrink:0}
+.edit-banner span{font-size:11px;color:#FFE066;font-weight:600}
+.footer-note{font-size:10px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
 </style>
 
 <!-- Meta Pixel — ADD YOUR PIXEL ID HERE BEFORE RUNNING PAID ADS -->
@@ -675,21 +706,12 @@ fbq('track','PageView');
       <div class="auth-sub">7-day free trial on all plans · Card required · Cancel anytime</div>
       <div class="signup-plan-grid" style="margin-top:16px">
 
-        <div class="signup-plan-card" id="spPlayer" onclick="selectSignupPlan('player')">
-          <div class="signup-plan-icon">👤</div>
-          <div class="signup-plan-info">
-            <div class="signup-plan-name">Tactiq Player</div>
-            <div class="signup-plan-price">£9.99/month after trial</div>
-            <div class="signup-plan-desc">Solo sessions · Ball mastery · Position-specific drills · PDF export</div>
-          </div>
-        </div>
-
         <div class="signup-plan-card" id="spCoach" onclick="selectSignupPlan('coach')">
           <div class="signup-plan-icon">📋</div>
           <div class="signup-plan-info">
             <div class="signup-plan-name">Tactiq Coach</div>
             <div class="signup-plan-price">£14.99/month after trial</div>
-            <div class="signup-plan-desc">Solo + Team sessions · Coaching profile · Team tactics · Full library</div>
+            <div class="signup-plan-desc">Solo + Team sessions · AI Assistant · Edit sessions · Full library</div>
           </div>
         </div>
 
@@ -698,7 +720,16 @@ fbq('track','PageView');
           <div class="signup-plan-info">
             <div class="signup-plan-name">Tactiq Club</div>
             <div class="signup-plan-price">£49.99/month after trial</div>
-            <div class="signup-plan-desc">Up to 12 team profiles · Full club management · All session types</div>
+            <div class="signup-plan-desc">Up to 12 team profiles · Set Piece Designer · Full club management</div>
+          </div>
+        </div>
+
+        <div class="signup-plan-card" id="spClub_pro" onclick="selectSignupPlan('club_pro')">
+          <div class="signup-plan-icon">⚡</div>
+          <div class="signup-plan-info">
+            <div class="signup-plan-name">Tactiq Club Pro</div>
+            <div class="signup-plan-price">£79.99/month after trial</div>
+            <div class="signup-plan-desc">Everything in Club + Fitness &amp; S&amp;C Hub · Speed, Strength &amp; Conditioning</div>
           </div>
         </div>
 
@@ -943,7 +974,15 @@ fbq('track','PageView');
 <div id="plansScreen" class="screen">
   <div class="wrap">
     <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="showScreen('profileScreen')">← Back</button><button class="nav-btn" onclick="showScreen('dashboardScreen')">← Back</button></div>
-    <div class="app-header" style="margin-bottom:20px"><h1>Choose Your <em>Plan</em></h1><p>7-day free trial on all paid plans · Cancel anytime · No contracts</p></div>
+    <div class="app-header" style="margin-bottom:14px"><h1>Choose Your <em>Plan</em></h1><p>7-day free trial on all paid plans · Cancel anytime · No contracts</p></div>
+
+    <div style="display:flex;justify-content:center;margin-bottom:18px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;display:flex;gap:4px">
+        <button id="billingMonthlyBtn" class="billing-toggle-btn active" onclick="setBillingCycle('monthly')">Monthly</button>
+        <button id="billingYearlyBtn" class="billing-toggle-btn" onclick="setBillingCycle('yearly')">Yearly <span style="color:#00E676;font-weight:800">— Save 2 months</span></button>
+      </div>
+    </div>
+
     <div class="plans-grid">
       <div class="plan-card">
         <div class="plan-name">Free</div>
@@ -957,49 +996,67 @@ fbq('track','PageView');
         </ul>
         <button class="btn" style="opacity:.4;cursor:default">Current Plan</button>
       </div>
+
       <div class="plan-card recommended">
         <div class="plan-badge">Popular</div>
-        <div class="plan-name" style="color:var(--accent)">Tactiq Player</div>
-        <div class="plan-price"><span class="plan-amount">£9.99</span><span class="plan-period">/month</span></div>
+        <div class="plan-name" style="color:var(--accent)">Tactiq Coach</div>
+        <div class="plan-price">
+          <span class="plan-amount" data-monthly="£14.99" data-yearly="£149.99">£14.99</span>
+          <span class="plan-period" data-monthly="/month" data-yearly="/year">/month</span>
+        </div>
+        <div class="plan-yearly-note" style="display:none;font-size:11px;color:#00E676;font-weight:700;margin-bottom:4px">Equivalent to £12.50/month</div>
         <ul class="plan-features">
-          <li class="has"><span class="fi">✅</span>Unlimited solo sessions</li>
-          <li class="has"><span class="fi">✅</span>Save all sessions</li>
-          <li class="has"><span class="fi">✅</span>Coaching profile</li>
+          <li class="has"><span class="fi">✅</span>Unlimited solo &amp; team sessions</li>
+          <li class="has"><span class="fi">✅</span>AI Coaching Assistant</li>
+          <li class="has"><span class="fi">✅</span>Edit completed sessions (text &amp; diagram)</li>
+          <li class="has"><span class="fi">✅</span>Session History &amp; Weekly Planner</li>
           <li class="has"><span class="fi">✅</span>PDF export</li>
-          <li class="has"><span class="fi">✅</span>Session history</li>
-          <li><span class="fi">❌</span>No team sessions</li>
+          <li><span class="fi">❌</span>No team profiles or set pieces</li>
         </ul>
-        <button class="btn" onclick="handleSubscribe('player')">Start 7-Day Free Trial</button>
-        <div class="trial-note">Then £9.99/month — cancel anytime</div>
+        <button class="btn" onclick="handleSubscribe('coach',currentBillingCycle)">Start 7-Day Free Trial</button>
+        <div class="trial-note" data-monthly="Then £14.99/month — cancel anytime" data-yearly="Then £149.99/year — cancel anytime">Then £14.99/month — cancel anytime</div>
       </div>
+
       <div class="plan-card">
-        <div class="plan-name" style="color:#00E676">Tactiq Coach</div>
-        <div class="plan-price"><span class="plan-amount">£14.99</span><span class="plan-period">/month</span></div>
-        <ul class="plan-features">
-          <li class="has"><span class="fi">✅</span>Everything in Player</li>
-          <li class="has"><span class="fi">✅</span>Team sessions (up to 16)</li>
-          <li class="has"><span class="fi">✅</span>Player progression tracking</li>
-          <li class="has"><span class="fi">✅</span>Session analytics</li>
-          <li><span class="fi">❌</span>No multi-team management</li>
-        </ul>
-        <button class="btn" style="background:linear-gradient(135deg,#00E676,#00C853)" onclick="handleSubscribe('coach')">Start 7-Day Free Trial</button>
-        <div class="trial-note">Then £14.99/month — cancel anytime</div>
-      </div>
-      <div class="plan-card gold">
-        <div class="plan-badge gold">Pro</div>
-        <div class="plan-name" style="color:var(--gold)">Tactiq Club</div>
-        <div class="plan-price"><span class="plan-amount">£49.99</span><span class="plan-period">/month</span></div>
+        <div class="plan-name" style="color:#00E676">Tactiq Club</div>
+        <div class="plan-price">
+          <span class="plan-amount" data-monthly="£49.99" data-yearly="£499.99">£49.99</span>
+          <span class="plan-period" data-monthly="/month" data-yearly="/year">/month</span>
+        </div>
+        <div class="plan-yearly-note" style="display:none;font-size:11px;color:#00E676;font-weight:700;margin-bottom:4px">Equivalent to £41.66/month</div>
         <ul class="plan-features">
           <li class="has"><span class="fi">✅</span>Everything in Coach</li>
-          <li class="has"><span class="fi">✅</span>Multiple teams & age groups</li>
-          <li class="has"><span class="fi">✅</span>Full squad management</li>
-          <li class="has"><span class="fi">✅</span>Full progression pathway</li>
+          <li class="has"><span class="fi">✅</span>12 Team Profiles</li>
+          <li class="has"><span class="fi">✅</span>Set Piece Designer (24 routines)</li>
+          <li class="has"><span class="fi">✅</span>Custom Set Piece Builder</li>
+          <li class="has"><span class="fi">✅</span>Week Planner</li>
+          <li><span class="fi">❌</span>No Fitness &amp; S&amp;C Hub</li>
+        </ul>
+        <button class="btn" style="background:linear-gradient(135deg,#00E676,#00C853)" onclick="handleSubscribe('club',currentBillingCycle)">Start 7-Day Free Trial</button>
+        <div class="trial-note" data-monthly="Then £49.99/month — cancel anytime" data-yearly="Then £499.99/year — cancel anytime">Then £49.99/month — cancel anytime</div>
+      </div>
+
+      <div class="plan-card gold">
+        <div class="plan-badge gold">Pro</div>
+        <div class="plan-name" style="color:var(--gold)">Tactiq Club Pro</div>
+        <div class="plan-price">
+          <span class="plan-amount" data-monthly="£79.99" data-yearly="£799.99">£79.99</span>
+          <span class="plan-period" data-monthly="/month" data-yearly="/year">/month</span>
+        </div>
+        <div class="plan-yearly-note" style="display:none;font-size:11px;color:#00E676;font-weight:700;margin-bottom:4px">Equivalent to £66.66/month</div>
+        <ul class="plan-features">
+          <li class="has"><span class="fi">✅</span>Everything in Club</li>
+          <li class="has"><span class="fi">✅</span>Fitness &amp; S&amp;C Hub</li>
+          <li class="has"><span class="fi">✅</span>Speed, Strength, Conditioning sessions</li>
+          <li class="has"><span class="fi">✅</span>Injury Prevention &amp; Recovery protocols</li>
+          <li class="has"><span class="fi">✅</span>Periodisation planning</li>
           <li class="has"><span class="fi">✅</span>Priority support</li>
         </ul>
-        <button class="btn btn-gold" onclick="handleSubscribe('club')">Start 7-Day Free Trial</button>
-        <div class="trial-note">Then £49.99/month — cancel anytime</div>
+        <button class="btn btn-gold" onclick="handleSubscribe('club_pro',currentBillingCycle)">Start 7-Day Free Trial</button>
+        <div class="trial-note" data-monthly="Then £79.99/month — cancel anytime" data-yearly="Then £799.99/year — cancel anytime">Then £79.99/month — cancel anytime</div>
       </div>
     </div>
+
     <div style="background:linear-gradient(135deg,rgba(0,230,118,0.07),rgba(0,194,255,0.04));border:1px solid rgba(0,230,118,0.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center">
     <div style="font-size:13px;font-weight:700;color:#00E676;margin-bottom:4px">🛡️ 7-Day Risk-Free Trial</div>
     <div style="font-size:11px;color:var(--muted);line-height:1.6">Try any paid plan free for 7 days. Cancel anytime before your trial ends and you won't be charged. No contracts, no hidden fees.</div>
@@ -1833,6 +1890,7 @@ const ROUTES={
   '/ai-assistant':()=>currentUser?openAiAssistant():navigate('/login'),
   '/history':()=>currentUser?openSessionHistory():navigate('/login'),
   '/planner':()=>currentUser?openWeeklyPlanner():navigate('/login'),
+  '/fitness':()=>currentUser&&isClubProPlan()?openFitnessHub():navigate('/dashboard'),
 };
 function navigate(path){window.history.pushState({},document.title,path);routeTo(path);}
 function routeTo(path){(ROUTES[path]||ROUTES['/'])();}
@@ -1864,19 +1922,34 @@ window.addEventListener('popstate',()=>routeTo(window.location.pathname));
 const SUPABASE_URL='https://bhkrvdzpwowbozgyiwmq.supabase.co';
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoa3J2ZHpwd293Ym96Z3lpd21xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzQ5NzQsImV4cCI6MjA5NjQ1MDk3NH0.i2JcDPiINpCQv8hc2GUJC1xtk9M41xCb_yjLuYnH8Gw';
 const STRIPE_KEY='pk_live_51Tfzx3L3rGpNnq8V42YhnMHJ7WtGp5ciSGHeKTR3bnGq8PNlWIp86K25vH2p0faqnpZdId6OclpZPy6QagtEh8Dt00uL4OGdzi';
-const STRIPE_PLAYER_PRICE='price_1Tg2AhL3rGpNnq8VWGI7bojw';
-const STRIPE_COACH_PRICE='price_1Tg2AhL3rGpNnq8V4veQBEfU';
-const STRIPE_CLUB_PRICE='price_1Tg2AhL3rGpNnq8VQONlQHex';
+// ── STRIPE PRICE IDS ────────────────────────────────────────────
+// TODO: Replace placeholder yearly/club_pro IDs with real Stripe price IDs once created.
+const STRIPE_COACH_PRICE_MONTHLY   = 'price_1Tg2AhL3rGpNnq8V4veQBEfU';
+const STRIPE_COACH_PRICE_YEARLY    = 'price_REPLACE_COACH_YEARLY';
+const STRIPE_CLUB_PRICE_MONTHLY    = 'price_1Tg2AhL3rGpNnq8VQONlQHex';
+const STRIPE_CLUB_PRICE_YEARLY     = 'price_REPLACE_CLUB_YEARLY';
+const STRIPE_CLUBPRO_PRICE_MONTHLY = 'price_REPLACE_CLUBPRO_MONTHLY';
+const STRIPE_CLUBPRO_PRICE_YEARLY  = 'price_REPLACE_CLUBPRO_YEARLY';
 const STRIPE_PORTAL_URL='https://billing.stripe.com/p/login/dRmbJ292J3TgfCE5hYdnW00';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const stripe=Stripe(STRIPE_KEY);
 
-const PLANS={free:{name:'Free',limit:3,chipClass:'plan-free',label:'Free'},player:{name:'Tactiq Player',limit:Infinity,chipClass:'plan-player',label:'Player'},coach:{name:'Tactiq Coach',limit:Infinity,chipClass:'plan-coach',label:'Coach'},club:{name:'Tactiq Club',limit:Infinity,chipClass:'plan-club',label:'Club'}};
-const isTeamPlan  = ()=>['coach','club'].includes(userPlan);
-const isPaidPlan  = ()=>userPlan!=='free';
-const isPlayerPlan= ()=>userPlan==='player';
-const isCoachPlan = ()=>userPlan==='coach';
-const isClubPlan  = ()=>userPlan==='club';
+const PLANS={free:{name:'Free',limit:3,chipClass:'plan-free',label:'Free'},coach:{name:'Tactiq Coach',limit:Infinity,chipClass:'plan-coach',label:'Coach'},club:{name:'Tactiq Club',limit:Infinity,chipClass:'plan-club',label:'Club'},club_pro:{name:'Tactiq Club Pro',limit:Infinity,chipClass:'plan-club-pro',label:'Club Pro'}};
+var currentBillingCycle='monthly';
+function setBillingCycle(cycle){
+  currentBillingCycle=cycle;
+  document.getElementById('billingMonthlyBtn').classList.toggle('active',cycle==='monthly');
+  document.getElementById('billingYearlyBtn').classList.toggle('active',cycle==='yearly');
+  document.querySelectorAll('.plan-amount[data-monthly]').forEach(function(el){el.textContent=el.dataset[cycle];});
+  document.querySelectorAll('.plan-period[data-monthly]').forEach(function(el){el.textContent=el.dataset[cycle];});
+  document.querySelectorAll('.trial-note[data-monthly]').forEach(function(el){el.textContent=el.dataset[cycle];});
+  document.querySelectorAll('.plan-yearly-note').forEach(function(el){el.style.display=cycle==='yearly'?'block':'none';});
+}
+const isTeamPlan   = ()=>['coach','club','club_pro'].includes(userPlan);
+const isPaidPlan   = ()=>userPlan!=='free';
+const isCoachPlan  = ()=>userPlan==='coach';
+const isClubPlan   = ()=>userPlan==='club'||userPlan==='club_pro';
+const isClubProPlan= ()=>userPlan==='club_pro';
 function canGenerateTeamSession(){ return isTeamPlan(); }
 function assertSessionTypeAllowed(isTeam){
   if(isTeam && !canGenerateTeamSession()){
@@ -2544,6 +2617,37 @@ function renderLegend(vw,vh,items){
     if(item==='shot')     add('#00E676','Shot',true,false);
   });
   return s;
+}
+
+function renderEditedDiagramSVG(elements){
+  var lc='rgba(255,255,255,0.4)';
+  var html='<rect width="200" height="280" fill="#0d3320" rx="4"/>'+
+    '<rect x="0" y="0" width="200" height="280" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
+    '<line x1="0" y1="2" x2="200" y2="2" stroke="'+lc+'" stroke-width="0.6"/>'+
+    '<rect x="35" y="212" width="130" height="68" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<rect x="65" y="248" width="70" height="32" fill="none" stroke="'+lc+'" stroke-width="0.6"/>'+
+    '<rect x="80" y="272" width="40" height="8" fill="rgba(40,55,70,0.7)" stroke="'+lc+'" stroke-width="0.8"/>';
+  (elements||[]).forEach(function(el,idx){
+    if(el.type==='attacker'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#00C2FF" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
+        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">'+(el.label||'A')+'</text>';
+    } else if(el.type==='defender'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FF4D6A" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
+        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">'+(el.label||'D')+'</text>';
+    } else if(el.type==='gk'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FFB300" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
+        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#000" font-size="6.5" font-weight="bold">GK</text>';
+    } else if(el.type==='ball'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="6" fill="#fff" stroke="#333" stroke-width="1"/><circle cx="'+el.x+'" cy="'+el.y+'" r="3" fill="#555"/>';
+    } else if(el.type==='pass'||el.type==='run'||el.type==='shot'){
+      var col=el.type==='pass'?'#00C2FF':el.type==='shot'?'#FF4D6A':'#FFD600';
+      var dash=el.type==='run'?' stroke-dasharray="5,3"':'';
+      var mid='vdiag_'+idx;
+      html+='<defs><marker id="'+mid+'" markerWidth="7" markerHeight="7" refX="3" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="'+col+'"/></marker></defs>'+
+        '<line x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+'" stroke="'+col+'" stroke-width="'+(el.type==='shot'?2.2:1.8)+'"'+dash+' marker-end="url(#'+mid+')"/>';
+    }
+  });
+  return '<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" style="max-width:240px;height:auto;display:block;margin:0 auto;border-radius:8px">'+html+'</svg>';
 }
 
 function renderSetupDiagram(setup){
@@ -3307,15 +3411,15 @@ async function handleLogin(){
 var signupSelectedPlan = '';
 
 var SIGNUP_PLANS = {
-  player: { icon:'👤', name:'Tactiq Player', price:'£6.99/month after 7-day trial',  priceId: STRIPE_PLAYER_PRICE },
-  coach:  { icon:'📋', name:'Tactiq Coach',  price:'£14.99/month after 7-day trial', priceId: STRIPE_COACH_PRICE  },
-  club:   { icon:'🏆', name:'Tactiq Club',   price:'£49.99/month after 7-day trial', priceId: STRIPE_CLUB_PRICE   },
+  coach:    { icon:'📋', name:'Tactiq Coach',    price:'£14.99/month after 7-day trial', priceId: STRIPE_COACH_PRICE_MONTHLY    },
+  club:     { icon:'🏆', name:'Tactiq Club',     price:'£49.99/month after 7-day trial', priceId: STRIPE_CLUB_PRICE_MONTHLY     },
+  club_pro: { icon:'⚡', name:'Tactiq Club Pro', price:'£79.99/month after 7-day trial', priceId: STRIPE_CLUBPRO_PRICE_MONTHLY  },
 };
 
 function selectSignupPlan(plan){
   signupSelectedPlan = plan;
   // Update selected styling
-  ['player','coach','club'].forEach(function(p){
+  ['coach','club','club_pro'].forEach(function(p){
     var el = document.getElementById('sp' + p.charAt(0).toUpperCase() + p.slice(1));
     if(el) el.classList.toggle('selected', p === plan);
   });
@@ -3873,9 +3977,14 @@ function renderSessionContent(s){
   // Resolve template for diagrams
   const allT=[...SOLO_SESSIONS,...TEAM_SESSIONS];
   const tmpl=s.sessionId?allT.find(t=>t.id===s.sessionId)||allT.find(t=>t.title===s.title):allT.find(t=>t.title===s.title);
-  // Session-level diagram
-  const sessDiagFn=s.diagram&&typeof s.diagram==='function'?s.diagram:(tmpl&&tmpl.diagram?tmpl.diagram:null);
-  const sessDiag=sessDiagFn?sessDiagFn():null;
+  // Session-level diagram — prefer this session's own saved custom elements if it has been edited
+  let sessDiag=null;
+  if(s.edited && s.elements && Array.isArray(s.elements) && s.elements.length){
+    sessDiag=renderEditedDiagramSVG(s.elements);
+  } else {
+    const sessDiagFn=s.diagram&&typeof s.diagram==='function'?s.diagram:(tmpl&&tmpl.diagram?tmpl.diagram:null);
+    sessDiag=sessDiagFn?sessDiagFn():null;
+  }
   document.getElementById('sessionContent').innerHTML=`
     <div class="sess-header">
       <div class="sess-cat">${s.category||''}</div>
@@ -4121,10 +4230,16 @@ async function loadUserPlan(){
   }catch(e){console.warn('Plan exception:',e.message);userPlan='free';}
 }
 
-async function handleSubscribe(planKey){
+async function handleSubscribe(planKey,cycle){
   if(!currentUser){showScreen('loginScreen');return;}
-  const prices={player:STRIPE_PLAYER_PRICE,coach:STRIPE_COACH_PRICE,club:STRIPE_CLUB_PRICE};
-  const priceId=prices[planKey];
+  cycle=cycle||'monthly';
+  const prices={
+    coach:{monthly:STRIPE_COACH_PRICE_MONTHLY,yearly:STRIPE_COACH_PRICE_YEARLY},
+    club:{monthly:STRIPE_CLUB_PRICE_MONTHLY,yearly:STRIPE_CLUB_PRICE_YEARLY},
+    club_pro:{monthly:STRIPE_CLUBPRO_PRICE_MONTHLY,yearly:STRIPE_CLUBPRO_PRICE_YEARLY}
+  };
+  const priceId=prices[planKey]?prices[planKey][cycle]:null;
+  if(!priceId){alert('This plan is not yet available for checkout.');return;}
   try{
     // Call Supabase Edge Function to create Checkout Session server-side
     const res=await fetch('https://friendly-zuccutto-eb2d7a.netlify.app/.netlify/functions/create-checkout',{
@@ -4157,12 +4272,13 @@ function openStripePortal(){window.open(STRIPE_PORTAL_URL,'_blank');}
 // PLAN-BASED DASHBOARD RENDERER
 // ═══════════════════════════════════════════════════════════════
 function renderPlanDashboard(){
+  const isClubProUser = isClubProPlan();
+  const isClub = userPlan === 'club' || isClubProUser;
   const isTeam = isTeamPlan();
-  const isClub = userPlan === 'club';
 
   let buttonsHTML = '';
 
-  if(isClub){
+  if(isClubProUser){
     buttonsHTML = `
       <div class="plan-dash-grid">
         <div class="plan-dash-btn" onclick="tryStartSession()">
@@ -4189,7 +4305,38 @@ function renderPlanDashboard(){
           <div class="plan-dash-icon">📋</div>
           <div class="plan-dash-label">Session History</div>
         </div>
-
+        <div class="plan-dash-btn plan-dash-btn-pro" onclick="navigate('/fitness')">
+          <div class="plan-dash-icon">💪</div>
+          <div class="plan-dash-label">Fitness &amp; S&amp;C</div>
+        </div>
+      </div>`;
+  } else if(isClub){
+    buttonsHTML = `
+      <div class="plan-dash-grid">
+        <div class="plan-dash-btn" onclick="tryStartSession()">
+          <div class="plan-dash-icon">⚡</div>
+          <div class="plan-dash-label">Build Session</div>
+        </div>
+        <div class="plan-dash-btn" onclick="openSetPieceDesigner()">
+          <div class="plan-dash-icon">🎯</div>
+          <div class="plan-dash-label">Set Pieces</div>
+        </div>
+        <div class="plan-dash-btn" onclick="navigate('/ai-assistant')">
+          <div class="plan-dash-icon">✨</div>
+          <div class="plan-dash-label">AI Assistant</div>
+        </div>
+        <div class="plan-dash-btn" onclick="openClubProfiles()">
+          <div class="plan-dash-icon">👥</div>
+          <div class="plan-dash-label">Team Profiles</div>
+        </div>
+        <div class="plan-dash-btn" onclick="navigate('/planner')">
+          <div class="plan-dash-icon">📅</div>
+          <div class="plan-dash-label">Week Planner</div>
+        </div>
+        <div class="plan-dash-btn" onclick="navigate('/history')">
+          <div class="plan-dash-icon">📋</div>
+          <div class="plan-dash-label">Session History</div>
+        </div>
       </div>`;
   } else if(isTeam){
     buttonsHTML = `
@@ -4202,9 +4349,9 @@ function renderPlanDashboard(){
           <div class="plan-dash-icon">✨</div>
           <div class="plan-dash-label">AI Assistant</div>
         </div>
-        <div class="plan-dash-btn" onclick="document.getElementById('sessionsList').scrollIntoView({behavior:'smooth'})">
+        <div class="plan-dash-btn" onclick="navigate('/history')">
           <div class="plan-dash-icon">📋</div>
-          <div class="plan-dash-label">Saved Sessions</div>
+          <div class="plan-dash-label">Session History</div>
         </div>
         <div class="plan-dash-btn" onclick="showScreen('profileScreen')">
           <div class="plan-dash-icon">👤</div>
@@ -4212,7 +4359,7 @@ function renderPlanDashboard(){
         </div>
       </div>`;
   } else {
-    // Player or Free plan
+    // Free plan
     buttonsHTML = `
       <div class="plan-dash-grid">
         <div class="plan-dash-btn" onclick="tryStartSession()">
@@ -4223,7 +4370,7 @@ function renderPlanDashboard(){
           <div class="plan-dash-icon">✨</div>
           <div class="plan-dash-label">AI Assistant</div>
         </div>
-        <div class="plan-dash-btn" onclick="document.getElementById('sessionsList').scrollIntoView({behavior:'smooth'})">
+        <div class="plan-dash-btn" onclick="navigate('/history')">
           <div class="plan-dash-icon">📁</div>
           <div class="plan-dash-label">Saved Sessions</div>
         </div>
@@ -4391,12 +4538,20 @@ function viewHistorySession(i){
   var overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,15,26,0.95);z-index:9999;overflow-y:auto;padding:20px';
   var wrap=document.createElement('div');wrap.style.maxWidth='600px';wrap.style.margin='0 auto';
+  var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;margin-bottom:16px';
   var closeBtn=document.createElement('button');closeBtn.textContent='Close';
-  closeBtn.style.cssText='background:#00C2FF;border:none;color:#0A254A;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;margin-bottom:16px;touch-action:manipulation';
+  closeBtn.style.cssText='background:#0F2540;border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;touch-action:manipulation;flex:1';
   closeBtn.onclick=function(){document.body.removeChild(overlay);};
+  btnRow.appendChild(closeBtn);
+  if(isCoachPlan()||isClubPlan()){
+    var editBtn=document.createElement('button');editBtn.textContent='✏️ Edit Session';
+    editBtn.style.cssText='background:#00C2FF;border:none;color:#0A254A;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;touch-action:manipulation;flex:1';
+    editBtn.onclick=function(){document.body.removeChild(overlay);openEditSession(i);};
+    btnRow.appendChild(editBtn);
+  }
   var h=document.createElement('h2');h.textContent=s.title||s.focus||'Session';h.style.cssText='font-size:18px;font-weight:800;color:#fff;margin:0 0 12px';
   var bd=document.createElement('div');bd.textContent=bodyText;bd.style.cssText='font-size:13px;line-height:1.7;color:#c8d8e8;white-space:pre-wrap';
-  wrap.appendChild(closeBtn);wrap.appendChild(h);wrap.appendChild(bd);overlay.appendChild(wrap);document.body.appendChild(overlay);
+  wrap.appendChild(btnRow);wrap.appendChild(h);wrap.appendChild(bd);overlay.appendChild(wrap);document.body.appendChild(overlay);
 }
 // ══ WEEKLY PLANNER ════════════════════════════════
 var weeklyPlan={mon:'',tue:'',wed:'',thu:'',fri:'',sat:'',sun:''};
@@ -4428,6 +4583,340 @@ function editWeekDay(k){
   weeklyPlan[k]=v.trim();renderWeeklyPlanner();
 }
 function saveWeeklyPlan(){try{localStorage.setItem('twp_'+(currentUser&&currentUser.id),JSON.stringify(weeklyPlan));alert('Week plan saved!');}catch(e){alert('Could not save.');}}
+
+// ══ FITNESS & S&C HUB (Club Pro only) ════════════════════════════
+var fitnessCurrentCategory='';
+var fitnessSessionResult=null;
+var FITNESS_CATEGORIES={
+  speed:{label:'Speed & Agility',icon:'🏃',prompt:'a speed and agility session'},
+  strength:{label:'Strength',icon:'💪',prompt:'a football-specific strength session'},
+  injury:{label:'Injury Prevention',icon:'🦵',prompt:'an injury prevention session'},
+  conditioning:{label:'Conditioning',icon:'🔋',prompt:'a conditioning session'},
+  periodisation:{label:'Periodisation',icon:'📅',prompt:'a periodisation training plan'},
+  recovery:{label:'Recovery',icon:'🧊',prompt:'a post-match recovery session'}
+};
+
+function openFitnessHub(){
+  if(!isClubProPlan()){navigate('/dashboard');return;}
+  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('fitnessHubScreen').classList.add('active');
+  renderFitnessRecentList();
+  window.scrollTo(0,0);
+}
+
+function openFitnessCategory(cat){
+  if(!isClubProPlan()){navigate('/dashboard');return;}
+  fitnessCurrentCategory=cat;
+  var meta=FITNESS_CATEGORIES[cat];
+  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('fitnessSessionScreen').classList.add('active');
+  document.getElementById('fitnessSessionTitle').innerHTML=meta?(meta.icon+' '+meta.label.split(' ')[0]+' <em>'+meta.label.split(' ').slice(1).join(' ')+'</em>'):'Build <em>Fitness Session</em>';
+  document.getElementById('fitnessPromptInput').value='';
+  document.getElementById('fitnessPromptArea').style.display='block';
+  document.getElementById('fitnessResultArea').style.display='none';
+  window.scrollTo(0,0);
+}
+
+async function runFitnessAssistant(){
+  var userPrompt=document.getElementById('fitnessPromptInput').value.trim();
+  if(!userPrompt)return;
+  var meta=FITNESS_CATEGORIES[fitnessCurrentCategory];
+  var fullPrompt=(meta?('Create '+meta.prompt+': '):'Create a football fitness session: ')+userPrompt;
+  var btn=document.getElementById('fitnessRunBtn'),res=document.getElementById('fitnessResultArea'),
+      rc=document.getElementById('fitnessResultContent'),err=document.getElementById('fitnessErrorMsg');
+  btn.textContent='Generating...';btn.disabled=true;err.style.display='none';
+  var sys='You are an expert football Strength & Conditioning coach following UEFA and sports science best practice. Respond with a structured fitness/S&C session including SESSION TITLE, FOCUS, DURATION, PLAYERS, EQUIPMENT, then PHASES as a list, each phase formatted exactly as "PHASE: [name] | [duration] | [description]" on its own line, then COACHING POINTS (bullet points starting with -), then INJURY CONSIDERATIONS. Be specific, practical, and grounded in real sports science principles for football.';
+  try{
+    var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:fullPrompt,system:sys})});
+    var d=await r.json();if(!d.content||!d.content[0])throw new Error('No response');
+    fitnessSessionResult=d.content[0].text;
+    rc.innerHTML=formatFitnessResult(fitnessSessionResult);
+    document.getElementById('fitnessPromptArea').style.display='none';
+    res.style.display='block';res.scrollIntoView({behavior:'smooth'});
+  }catch(e){err.textContent='Could not generate session. Please try again.';err.style.display='block';}
+  btn.textContent='✨ Generate Fitness Session';btn.disabled=false;
+}
+
+function formatFitnessResult(text){
+  var html='';var phaseColors=['#00C2FF','#FFD600','#FF8A3D','#FF4D6A','#00E676'];var phaseIdx=0;
+  var phases=[];
+  text.split('\n').forEach(function(line){
+    line=line.trim();if(!line)return;
+    if(line.toUpperCase().startsWith('PHASE:')){
+      var parts=line.slice(6).split('|').map(function(s){return s.trim();});
+      phases.push({name:parts[0]||'Phase',time:parts[1]||'',detail:parts[2]||''});
+    } else if(line.startsWith('- ')){
+      html+='<div style="padding:3px 0 3px 12px;border-left:2px solid #00C2FF;margin:2px 0;font-size:13px;color:var(--text)">'+line.slice(2)+'</div>';
+    } else if(line.match(/^[A-Z][A-Z ]+:/)&&line.length<60){
+      var p=line.indexOf(':');
+      html+='<div style="font-weight:800;color:#00C2FF;font-size:12px;margin:10px 0 4px;text-transform:uppercase">'+line.slice(0,p)+'</div><p style="margin:2px 0;font-size:13px;color:var(--text)">'+line.slice(p+1).trim()+'</p>';
+    } else {
+      html+='<p style="margin:3px 0;font-size:13px;color:var(--text)">'+line+'</p>';
+    }
+  });
+  if(phases.length){
+    var phaseHtml='<div style="font-weight:800;color:#00C2FF;font-size:12px;margin:14px 0 6px;text-transform:uppercase">Session Phases</div>';
+    phases.forEach(function(ph,i){
+      var col=phaseColors[i%phaseColors.length];
+      phaseHtml+='<div class="phase-row"><div class="phase-dot" style="background:'+col+'"></div>'+
+        '<div class="phase-text"><div class="phase-name">'+ph.name+'</div><div class="phase-detail">'+ph.detail+'</div></div>'+
+        '<div class="phase-time">'+ph.time+'</div></div>';
+    });
+    // Simple load chart based on phase order (ramps up then down)
+    phaseHtml+='<div class="load-chart">';
+    phases.forEach(function(ph,i){
+      var n=phases.length;
+      var pct=n>1?Math.round(30+70*Math.sin(Math.PI*i/(n-1))):60;
+      var col=phaseColors[i%phaseColors.length];
+      phaseHtml+='<div class="load-bar" style="height:'+pct+'%;background:'+col+'"><div class="load-bar-label">'+ph.name.split(' ')[0]+'</div></div>';
+    });
+    phaseHtml+='</div>';
+    html=phaseHtml+html;
+  }
+  return html;
+}
+
+async function saveFitnessSession(){
+  if(!fitnessSessionResult||!currentUser)return;
+  var m=fitnessSessionResult.match(/SESSION TITLE:\s*(.+)/);
+  var title=m?m[1].trim():'Fitness Session';
+  var catLabel=FITNESS_CATEGORIES[fitnessCurrentCategory]?FITNESS_CATEGORIES[fitnessCurrentCategory].label:'Fitness';
+  try{
+    await sb.from('sessions').insert([{user_id:currentUser.id,title:title,content:fitnessSessionResult,focus:catLabel,category:'Fitness & S&C',plan_type:userPlan,created_at:new Date().toISOString()}]);
+    alert('Fitness session saved!');
+    navigate('/fitness');
+  }catch(e){alert('Could not save session.');}
+}
+
+function renderFitnessRecentList(){
+  var list=document.getElementById('fitnessRecentList');if(!list)return;
+  var fitnessSessions=(userSessions||[]).filter(function(s){return s.category==='Fitness & S&C';});
+  if(!fitnessSessions.length){
+    list.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px 0;font-size:13px">No fitness sessions yet — build your first one above.</div>';
+    return;
+  }
+  list.innerHTML=fitnessSessions.slice(0,5).map(function(s,i){
+    var date=new Date(s.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return '<div class="history-card" onclick="viewHistorySession('+userSessions.indexOf(s)+')">'+
+      '<div class="history-card-title">'+(s.title||'Fitness Session')+'</div>'+
+      '<div class="history-card-meta">'+date+(s.focus?' · '+s.focus:'')+'</div></div>';
+  }).join('');
+}
+
+// ══ EDIT SESSION (text + diagram) ════════════════════════════════
+var editSessionIndex=-1;
+var editBuilderElements=[];
+var editBuilderPlayerCount=0;
+var editBuilderTool='attacker';
+var editBuilderRunStart=null;
+var editOriginalDiagramSource='template'; // 'template' or 'custom'
+
+function openEditSession(i){
+  if(!isCoachPlan()&&!isClubPlan())return; // Coach, Club and Club Pro can edit
+  var s=userSessions[i];if(!s)return;
+  editSessionIndex=i;
+  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('editSessionScreen').classList.add('active');
+  document.getElementById('editSessionSub').textContent=(s.focus||s.category||'')+(s.time?(' · '+s.time):'');
+  document.getElementById('editTitleInput').value=s.title||'';
+
+  // Build editable text content
+  var bodyText='';
+  if(s.content){bodyText=s.content;}
+  else{
+    if(s.overview)bodyText+='OVERVIEW\n'+s.overview+'\n\n';
+    if(s.tip)bodyText+='COACHING TIP\n'+s.tip+'\n\n';
+    if(s.phases&&s.phases.length){
+      s.phases.forEach(function(ph){
+        bodyText+=(ph.name||'Phase').toUpperCase()+'\n';
+        if(ph.desc)bodyText+=ph.desc+'\n';
+        if(ph.points&&ph.points.length)bodyText+='Coaching points:\n'+ph.points.map(function(p){return '- '+p;}).join('\n')+'\n';
+        bodyText+='\n';
+      });
+    }
+  }
+  document.getElementById('editContentInput').value=bodyText;
+
+  // Resolve diagram elements: saved custom elements take priority over shared template
+  if(s.elements && Array.isArray(s.elements) && s.elements.length){
+    editBuilderElements=JSON.parse(JSON.stringify(s.elements));
+    editOriginalDiagramSource='custom';
+  } else {
+    var allT=[...SOLO_SESSIONS,...TEAM_SESSIONS];
+    var tmpl=s.sessionId?allT.find(function(t){return t.id===s.sessionId;}):allT.find(function(t){return t.title===s.title;});
+    editBuilderElements=[];
+    if(tmpl && tmpl.diagram){
+      // Extract element data from the template's diagram by re-running its generator
+      // and parsing positions back out is not reliable, so start blank with a notice
+      // if no custom elements exist yet — coach builds fresh on first edit.
+    }
+    editOriginalDiagramSource='template';
+  }
+  editBuilderPlayerCount=editBuilderElements.filter(function(e){return e.type==='attacker'||e.type==='defender';}).length;
+
+  switchEditTab('text');
+  window.scrollTo(0,0);
+}
+
+function switchEditTab(tab){
+  document.getElementById('editTabText').classList.toggle('active',tab==='text');
+  document.getElementById('editTabDiagram').classList.toggle('active',tab==='diagram');
+  document.getElementById('editTextPane').style.display=tab==='text'?'block':'none';
+  document.getElementById('editDiagramPane').style.display=tab==='diagram'?'block':'none';
+  if(tab==='diagram'){
+    var svg=document.getElementById('editBuilderSvg');
+    if(svg) svg._editBuilderBound=false;
+    renderEditBuilderPitch();
+  }
+}
+
+function setEditTool(tool){
+  editBuilderTool=tool;editBuilderRunStart=null;
+  var allTools=['editToolAttacker','editToolDefender','editToolGk','editToolBall','editToolPass','editToolRun','editToolShot','editToolErase'];
+  allTools.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('active');});
+  var map={attacker:'editToolAttacker',defender:'editToolDefender',gk:'editToolGk',ball:'editToolBall',pass:'editToolPass',run:'editToolRun',shot:'editToolShot',erase:'editToolErase'};
+  var el=document.getElementById(map[tool]);if(el)el.classList.add('active');
+  var hint=document.getElementById('editBuilderHint');if(hint)hint.textContent=editBuilderHintText();
+}
+
+function editBuilderHintText(){
+  var hints={attacker:'Tap pitch to place attacker',defender:'Tap pitch to place defender',gk:'Tap pitch to place goalkeeper',ball:'Tap pitch to place ball',pass:'Tap START point of pass arrow',run:'Tap START point of run arrow',shot:'Tap START point of shot arrow',erase:'Tap element to erase'};
+  return hints[editBuilderTool]||'Tap pitch';
+}
+
+function renderEditBuilderPitch(){
+  var svg=document.getElementById('editBuilderSvg');if(!svg)return;
+  var lc='rgba(255,255,255,0.6)';
+  var html='<rect width="200" height="280" fill="#2d7a3a"/>'+
+    '<rect x="0" y="0" width="200" height="280" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
+    '<line x1="0" y1="2" x2="200" y2="2" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<rect x="35" y="212" width="130" height="68" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
+    '<rect x="65" y="248" width="70" height="32" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<rect x="80" y="272" width="40" height="8" fill="rgba(40,55,70,0.85)" stroke="'+lc+'" stroke-width="1"/>'+
+    '<circle cx="100" cy="232" r="2" fill="'+lc+'"/>'+
+    '<circle cx="2" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<circle cx="198" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
+
+  if(editBuilderRunStart && ['pass','run','shot'].includes(editBuilderTool)){
+    var pcol=editBuilderTool==='pass'?'#00C2FF':editBuilderTool==='shot'?'#FF4D6A':'#FFD600';
+    html+='<circle cx="'+editBuilderRunStart.x+'" cy="'+editBuilderRunStart.y+'" r="5" fill="'+pcol+'" opacity="0.6" stroke-dasharray="3,2" stroke="#fff" stroke-width="1"/>';
+    html+='<text x="'+editBuilderRunStart.x+'" y="'+(editBuilderRunStart.y-8)+'" text-anchor="middle" fill="'+pcol+'" font-size="8">Tap end point</text>';
+  }
+
+  editBuilderElements.forEach(function(el,idx){
+    if(el.type==='attacker'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#00C2FF" stroke="#fff" stroke-width="1.5"/>'+
+        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="8" font-weight="700">'+el.label+'</text>';
+    } else if(el.type==='defender'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FF4D6A" stroke="#fff" stroke-width="1.5"/>'+
+        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#fff" font-size="8" font-weight="700">'+el.label+'</text>';
+    } else if(el.type==='gk'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FFB300" stroke="#fff" stroke-width="1.5"/>'+
+        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="700">GK</text>';
+    } else if(el.type==='ball'){
+      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="6" fill="#fff" stroke="#333" stroke-width="1"/>'+
+        '<circle cx="'+el.x+'" cy="'+el.y+'" r="3" fill="#555"/>';
+    } else if(el.type==='pass'||el.type==='run'||el.type==='shot'){
+      var col=el.type==='pass'?'#00C2FF':el.type==='shot'?'#FF4D6A':'#FFD600';
+      var dash=el.type==='run'?' stroke-dasharray="5,3"':'';
+      var mid='edit_arr_'+idx;
+      html+='<defs><marker id="'+mid+'" markerWidth="7" markerHeight="7" refX="3" refY="3.5" orient="auto">'+
+        '<path d="M0,0 L7,3.5 L0,7 Z" fill="'+col+'"/></marker></defs>'+
+        '<line x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+
+        '" stroke="'+col+'" stroke-width="'+(el.type==='shot'?2.5:2)+'"'+dash+
+        ' marker-end="url(#'+mid+')"/>';
+    }
+  });
+
+  svg.innerHTML=html;
+  if(!svg._editBuilderBound){
+    svg._editBuilderBound=true;
+    svg.addEventListener('touchend',function(e){
+      e.preventDefault();
+      var rect=svg.getBoundingClientRect();
+      var t=e.changedTouches[0];
+      handleEditBuilderClick(
+        Math.round((t.clientX-rect.left)*(200/rect.width)),
+        Math.round((t.clientY-rect.top)*(280/rect.height))
+      );
+    },{passive:false});
+    svg.addEventListener('click',function(e){
+      if(e.sourceCapabilities&&e.sourceCapabilities.firesTouchEvents)return;
+      var rect=svg.getBoundingClientRect();
+      handleEditBuilderClick(
+        Math.round((e.clientX-rect.left)*(200/rect.width)),
+        Math.round((e.clientY-rect.top)*(280/rect.height))
+      );
+    });
+  }
+}
+
+function handleEditBuilderClick(x,y){
+  var hint=document.getElementById('editBuilderHint');
+  if(editBuilderTool==='erase'){
+    var minDist=999,minIdx=-1;
+    editBuilderElements.forEach(function(el,i){
+      var ex=el.x||((el.x1+el.x2)/2)||0,ey=el.y||((el.y1+el.y2)/2)||0;
+      var d=Math.sqrt((ex-x)*(ex-x)+(ey-y)*(ey-y));
+      if(d<minDist){minDist=d;minIdx=i;}
+    });
+    if(minIdx>=0&&minDist<25){editBuilderElements.splice(minIdx,1);}
+    renderEditBuilderPitch();return;
+  }
+  if(editBuilderTool==='pass'||editBuilderTool==='run'||editBuilderTool==='shot'){
+    if(!editBuilderRunStart){
+      editBuilderRunStart={x:x,y:y};
+      if(hint){
+        var labels={pass:'Tap end point for pass arrow',run:'Tap end point for run arrow',shot:'Tap end point for shot arrow'};
+        hint.textContent=labels[editBuilderTool]||'Tap end point';
+      }
+    } else {
+      editBuilderElements.push({type:editBuilderTool,x1:editBuilderRunStart.x,y1:editBuilderRunStart.y,x2:x,y2:y});
+      editBuilderRunStart=null;
+      if(hint) hint.textContent=editBuilderHintText();
+    }
+    renderEditBuilderPitch();return;
+  }
+  editBuilderPlayerCount++;
+  var label=editBuilderTool==='attacker'?('A'+editBuilderPlayerCount):editBuilderTool==='defender'?('D'+editBuilderPlayerCount):'GK';
+  editBuilderElements.push({type:editBuilderTool,x:x,y:y,label:label});
+  renderEditBuilderPitch();
+  if(hint) hint.textContent=editBuilderHintText();
+}
+
+function editBuilderUndo(){
+  if(editBuilderRunStart){editBuilderRunStart=null;renderEditBuilderPitch();return;}
+  if(editBuilderElements.length>0){editBuilderElements.pop();editBuilderPlayerCount=Math.max(0,editBuilderPlayerCount-1);}
+  renderEditBuilderPitch();
+}
+
+function clearEditDiagram(){
+  if(!confirm('Clear the entire diagram?'))return;
+  editBuilderElements=[];editBuilderPlayerCount=0;editBuilderRunStart=null;
+  renderEditBuilderPitch();
+}
+
+async function saveEditedSession(){
+  if(editSessionIndex<0||!userSessions[editSessionIndex])return;
+  var s=userSessions[editSessionIndex];
+  var newTitle=document.getElementById('editTitleInput').value.trim();
+  var newContent=document.getElementById('editContentInput').value;
+  var updates={title:newTitle||s.title,edited:true,updated_at:new Date().toISOString()};
+  // If session originally used 'content' field (AI/Fitness sessions), update it directly.
+  // If it used structured phases, store the edited text back into 'content' as an override
+  // and keep original phases for reference but flag edited so display prefers content.
+  updates.content=newContent;
+  updates.elements=editBuilderElements;
+  try{
+    var res=await sb.from('sessions').update(updates).eq('id',s.id);
+    if(res.error)throw new Error(res.error.message);
+    Object.assign(s,updates);
+    alert('Session updated!');
+    navigate('/history');
+  }catch(e){
+    alert('Could not save changes: '+e.message);
+  }
+}
 
 document.addEventListener('DOMContentLoaded',function(){
 (async()=>{
@@ -4850,6 +5339,138 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 </div>
 
+
+
+<!-- ══════════ FITNESS & S&C HUB (Club Pro only) ══════════ -->
+<div id="fitnessHubScreen" class="screen">
+  <div class="wrap">
+    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/dashboard')">← Dashboard</button></div>
+    <div class="pro-badge">⚡ Club Pro</div>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 4px">Fitness &amp; <em>S&amp;C</em></h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 14px">Football-specific physical development, built for your squad.</p>
+
+    <div class="cat-grid">
+      <div class="cat-card" onclick="openFitnessCategory('speed')">
+        <div class="cat-icon">🏃</div>
+        <div class="cat-label">Speed &amp; Agility</div>
+        <div class="cat-desc">Acceleration, COD, reactive sprints</div>
+      </div>
+      <div class="cat-card" onclick="openFitnessCategory('strength')">
+        <div class="cat-icon">💪</div>
+        <div class="cat-label">Strength</div>
+        <div class="cat-desc">Gym-based &amp; bodyweight programmes</div>
+      </div>
+      <div class="cat-card" onclick="openFitnessCategory('injury')">
+        <div class="cat-icon">🦵</div>
+        <div class="cat-label">Injury Prevention</div>
+        <div class="cat-desc">Hamstring, groin, ankle protocols</div>
+      </div>
+      <div class="cat-card" onclick="openFitnessCategory('conditioning')">
+        <div class="cat-icon">🔋</div>
+        <div class="cat-label">Conditioning</div>
+        <div class="cat-desc">Aerobic base, repeated sprint ability</div>
+      </div>
+      <div class="cat-card" onclick="openFitnessCategory('periodisation')">
+        <div class="cat-icon">📅</div>
+        <div class="cat-label">Periodisation</div>
+        <div class="cat-desc">Match-day minus planning, micro-cycles</div>
+      </div>
+      <div class="cat-card" onclick="openFitnessCategory('recovery')">
+        <div class="cat-icon">🧊</div>
+        <div class="cat-label">Recovery</div>
+        <div class="cat-desc">Post-match protocols, sleep &amp; load</div>
+      </div>
+    </div>
+
+    <div style="font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px">Recently Built</div>
+    <div id="fitnessRecentList" style="display:flex;flex-direction:column;gap:10px"></div>
+
+    <button class="btn" style="width:100%;margin-top:8px" onclick="openFitnessCategory('')">+ Build New Fitness Session</button>
+  </div>
+</div>
+
+<!-- ══════════ FITNESS SESSION GENERATOR ══════════ -->
+<div id="fitnessSessionScreen" class="screen">
+  <div class="wrap">
+    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/fitness')">← Fitness Hub</button></div>
+    <div class="pro-badge">⚡ Club Pro</div>
+    <h2 id="fitnessSessionTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 4px">Speed &amp; <em>Agility</em></h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 14px">Describe the session you need — AI builds it instantly.</p>
+
+    <div id="fitnessPromptArea">
+      <div class="form-group">
+        <textarea class="form-input" id="fitnessPromptInput" rows="3" placeholder="e.g. Repeated sprint and change of direction session for U16s, pre-season week 2, 40 minutes" style="resize:none;font-size:14px"></textarea>
+      </div>
+      <button class="btn" style="width:100%" onclick="runFitnessAssistant()" id="fitnessRunBtn">✨ Generate Fitness Session</button>
+      <div id="fitnessErrorMsg" class="msg" style="display:none"></div>
+    </div>
+
+    <div id="fitnessResultArea" style="display:none">
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
+      <div id="fitnessResultContent" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" style="flex:1" onclick="saveFitnessSession()">💾 Save to Fitness Library</button>
+        <button class="btn-ghost" style="flex:1" onclick="document.getElementById('fitnessResultArea').style.display='none';document.getElementById('fitnessPromptArea').style.display='block'">New Session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ EDIT SESSION (text + diagram) ══════════ -->
+<div id="editSessionScreen" class="screen">
+  <div class="wrap">
+    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/history')">← Session History</button></div>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;margin:0 0 2px">Edit <em>Session</em></h2>
+    <p id="editSessionSub" style="font-size:11px;color:var(--muted);margin:0 0 12px"></p>
+
+    <div class="tabs">
+      <div class="tab active" id="editTabText" onclick="switchEditTab('text')">✏️ Edit Text</div>
+      <div class="tab" id="editTabDiagram" onclick="switchEditTab('diagram')">🎯 Edit Diagram</div>
+    </div>
+
+    <div class="edit-banner">
+      <div class="edit-banner-dot"></div>
+      <span>Editing — changes are not saved until you tap Save</span>
+    </div>
+
+    <!-- TEXT EDIT -->
+    <div id="editTextPane">
+      <div class="field-label">Session Title</div>
+      <input class="form-input" id="editTitleInput" type="text"/>
+      <div class="field-label">Session Content</div>
+      <textarea class="form-input" id="editContentInput" rows="14" style="resize:none;font-size:13px;line-height:1.6"></textarea>
+      <div class="footer-note">Diagram is edited separately — switch to the Edit Diagram tab to adjust player positions and arrows.</div>
+    </div>
+
+    <!-- DIAGRAM EDIT -->
+    <div id="editDiagramPane" style="display:none">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+        <button class="sp-tool-btn active" id="editToolAttacker" onclick="setEditTool('attacker')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🔵</span>Attacker</button>
+        <button class="sp-tool-btn" id="editToolDefender" onclick="setEditTool('defender')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🔴</span>Defender</button>
+        <button class="sp-tool-btn" id="editToolGk" onclick="setEditTool('gk')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🟡</span>GK</button>
+        <button class="sp-tool-btn" id="editToolBall" onclick="setEditTool('ball')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">⚽</span>Ball</button>
+        <button class="sp-tool-btn" id="editToolPass" onclick="setEditTool('pass')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#00C2FF;display:block;margin:6px auto 2px"></span>Pass</button>
+        <button class="sp-tool-btn" id="editToolRun" onclick="setEditTool('run')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;border-top:3px dashed #FFD600;display:block;margin:6px auto 2px"></span>Run</button>
+        <button class="sp-tool-btn" id="editToolShot" onclick="setEditTool('shot')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#FF4D6A;display:block;margin:6px auto 2px"></span>Shot</button>
+        <button class="sp-tool-btn" id="editToolErase" onclick="setEditTool('erase')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">✕</span>Erase</button>
+      </div>
+      <div id="editBuilderHint" style="font-size:11px;color:var(--accent);text-align:center;margin-bottom:6px;min-height:16px">Tap pitch to place attacker</div>
+      <div class="sp-builder-pitch" id="editBuilderPitch">
+        <svg id="editBuilderSvg" viewBox="0 0 200 280" style="width:100%;touch-action:none;cursor:crosshair;pointer-events:all;display:block"></svg>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="nav-btn" style="flex:1" onclick="editBuilderUndo()">↩ Undo</button>
+        <button class="nav-btn" style="flex:1" onclick="clearEditDiagram()">✕ Clear</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn" style="flex:1" onclick="saveEditedSession()">💾 Save Changes</button>
+      <button class="btn-ghost" style="flex:1" onclick="navigate('/history')">Cancel</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
