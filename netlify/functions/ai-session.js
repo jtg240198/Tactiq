@@ -19,8 +19,10 @@ exports.handler = async function(event) {
   }
 
   try {
-    const {prompt} = JSON.parse(event.body);
+    const {prompt, system} = JSON.parse(event.body);
     if(!prompt) return {statusCode:400, body:'Missing prompt'};
+
+    const defaultSystem = 'You are an expert UEFA football coaching assistant. Respond with a complete structured session plan including SESSION TITLE, DURATION, PLAYERS, AGE GROUP, FOCUS, WARM UP (10-15 min), TECHNICAL PHASE (15-20 min), GAME SCENARIO (20-25 min), COACHING POINTS (5 bullet points starting with -), COOL DOWN, KEY QUESTIONS FOR PLAYERS. Be specific and immediately usable by coaches.';
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -32,7 +34,7 @@ exports.handler = async function(event) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
-        system: 'You are an expert UEFA football coaching assistant. Respond with a complete structured session plan including SESSION TITLE, DURATION, PLAYERS, AGE GROUP, FOCUS, WARM UP (10-15 min), TECHNICAL PHASE (15-20 min), GAME SCENARIO (20-25 min), COACHING POINTS (5 bullet points starting with -), COOL DOWN, KEY QUESTIONS FOR PLAYERS. Be specific and immediately usable by coaches.',
+        system: system || defaultSystem,
         messages: [{role:'user', content:prompt}]
       })
     });
