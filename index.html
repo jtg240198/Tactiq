@@ -4804,6 +4804,31 @@ function rescaleElementsToBuilder(elements,vw,vh){
   });
 }
 
+function extractSetupFromDiagramFn(fn){
+  // Reads a template's diagram()=>renderSetupDiagram({...}) function as source text
+  // and recovers the {...} setup object so Edit Diagram can load real coordinates.
+  // This never modifies the template — it only reads its source to extract data.
+  if(typeof fn!=='function') return null;
+  try{
+    var src=fn.toString();
+    var callIdx=src.indexOf('renderSetupDiagram(');
+    if(callIdx<0) return null;
+    var start=src.indexOf('{',callIdx);
+    if(start<0) return null;
+    var depth=0,end=-1;
+    for(var i=start;i<src.length;i++){
+      if(src[i]==='{')depth++;
+      else if(src[i]==='}'){depth--;if(depth===0){end=i;break;}}
+    }
+    if(end<0) return null;
+    var objSrc=src.slice(start,end+1);
+    return (new Function('return '+objSrc))();
+  }catch(e){
+    console.warn('Could not extract diagram setup data:',e.message);
+    return null;
+  }
+}
+
 function openEditSession(i){
   if(!isCoachPlan()&&!isClubPlan())return; // Coach, Club and Club Pro can edit
   var s=userSessions[i];if(!s)return;
@@ -4831,40 +4856,59 @@ function openEditSession(i){
   document.getElementById('editContentInput').value=bodyText;
 
   // ── Resolve diagram elements ──────────────────────────────────
-  // Priority 1: this session already has its own saved custom elements (edited before) — single diagram, no phase picker needed.
-  // Priority 2: pull each phase's own setup.elements from the saved session data, rescaled into the builder's 200x280 canvas.
-  // Priority 3: single top-level session.diagram setup (Solo sessions sometimes only have one).
+  // Priority 1: this session already has its own saved custom elements (edited before).
+  // Priority 2: per-phase setup.elements saved directly on the session OR recoverable from the matching template.
+  // Priority 3: a single top-level diagram, recovered from the matching template's diagram() function source.
   var phaseSelWrap=document.getElementById('editPhaseSelectorWrap');
   var phaseSel=document.getElementById('editPhaseSelector');
   editSessionPhases=[];
 
+  var allTemplatesForLookup=[].concat(
+    (typeof SOLO_SESSIONS!=='undefined'?SOLO_SESSIONS:[]),
+    (typeof TEAM_SESSIONS!=='undefined'?TEAM_SESSIONS:[])
+  );
+  var matchedTmpl=s.sessionId?allTemplatesForLookup.find(function(t){return t.id===s.sessionId;}):
+    allTemplatesForLookup.find(function(t){return t.title===s.title;});
+
   if(s.elements && Array.isArray(s.elements) && s.elements.length){
     editBuilderElements=JSON.parse(JSON.stringify(s.elements));
     editOriginalDiagramSource='custom';
-    phaseSelWrap.style.display='none';
-  } else if(s.phases && s.phases.length && s.phases.some(function(p){return p.setup && p.setup.elements && p.setup.elements.length;})){
-    s.phases.forEach(function(ph){
-      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
+  } else if(s.phases && s.phases.length && s.phases.some(function(p,i){
+      return (p.setup && p.setup.elements && p.setup.elements.length) ||
+             (matchedTmpl && matchedTmpl.phases && matchedTmpl.phases[i] && matchedTmpl.phases[i].setup && matchedTmpl.phases[i].setup.elements && matchedTmpl.phases[i].setup.elements.length);
+    })){
+    s.phases.forEach(function(ph,i){
+      var setup=(ph.setup && ph.setup.elements && ph.setup.elements.length)?ph.setup:
+        (matchedTmpl && matchedTmpl.phases && matchedTmpl.phases[i] ? matchedTmpl.phases[i].setup : null);
+      if(setup && setup.elements && setup.elements.length){
         editSessionPhases.push({
           label:ph.title||ph.phase||'Phase',
-          elements:rescaleElementsToBuilder(ph.setup.elements,ph.setup.vw,ph.setup.vh)
+          elements:rescaleElementsToBuilder(setup.elements,setup.vw,setup.vh)
         });
       }
     });
     editOriginalDiagramSource='template';
-    if(editSessionPhases.length>1){
-      phaseSel.innerHTML=editSessionPhases.map(function(p,idx){return '<option value="'+idx+'">'+p.label+'</option>';}).join('');
-      phaseSelWrap.style.display='block';
-    } else {
-      phaseSelWrap.style.display='none';
+  } else if(matchedTmpl && matchedTmpl.diagram && typeof matchedTmpl.diagram==='function'){
+    var topSetup=extractSetupFromDiagramFn(matchedTmpl.diagram);
+    if(topSetup && topSetup.elements && topSetup.elements.length){
+      editSessionPhases.push({
+        label:s.title||'Session Diagram',
+        elements:rescaleElementsToBuilder(topSetup.elements,topSetup.vw,topSetup.vh)
+      });
     }
-    editCurrentPhaseIdx=0;
-    editBuilderElements=editSessionPhases.length?JSON.parse(JSON.stringify(editSessionPhases[0].elements)):[];
-  } else {
-    editBuilderElements=[];
     editOriginalDiagramSource='template';
+  } else {
+    editOriginalDiagramSource='template';
+  }
+
+  if(editSessionPhases.length>1){
+    phaseSel.innerHTML=editSessionPhases.map(function(p,idx){return '<option value="'+idx+'">'+p.label+'</option>';}).join('');
+    phaseSelWrap.style.display='block';
+  } else {
     phaseSelWrap.style.display='none';
   }
+  editCurrentPhaseIdx=0;
+  editBuilderElements=editSessionPhases.length?JSON.parse(JSON.stringify(editSessionPhases[0].elements)):[];
   editBuilderPlayerCount=editBuilderElements.filter(function(e){return e.type==='attacker'||e.type==='defender';}).length;
 
   switchEditTab('text');
