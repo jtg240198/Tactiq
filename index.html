@@ -4478,6 +4478,8 @@ function setAiPrompt(t){document.getElementById('aiPromptInput').value=t;}
 async function runAiAssistant(){
   var prompt=document.getElementById('aiPromptInput').value.trim();if(!prompt)return;
   var btn=document.getElementById('aiRunBtn'),res=document.getElementById('aiResultArea'),rc=document.getElementById('aiResultContent'),err=document.getElementById('aiErrorMsg');
+  var editBtn=document.getElementById('aiEditToggleBtn');
+  if(editBtn) editBtn.style.display=(isCoachPlan()||isClubPlan())?'block':'none';
   btn.textContent='Generating...';btn.disabled=true;err.style.display='none';res.style.display='none';
   try{
     var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
@@ -4963,6 +4965,44 @@ async function saveEditedSession(){
   }
 }
 
+
+function toggleAiResultEdit(){
+  if(!isCoachPlan()&&!isClubPlan()){alert('Editing before saving is available on Coach, Club and Club Pro plans.');return;}
+  var view=document.getElementById('aiResultContent');
+  var edit=document.getElementById('aiResultEditArea');
+  var btn=document.getElementById('aiEditToggleBtn');
+  var editing=edit.style.display==='block';
+  if(!editing){
+    edit.value=aiSessionResult;
+    view.style.display='none';edit.style.display='block';
+    btn.textContent='👁️ Preview';
+  } else {
+    view.innerHTML=formatAiResult(aiSessionResult);
+    view.style.display='block';edit.style.display='none';
+    btn.textContent='✏️ Edit Before Saving';
+  }
+}
+
+function toggleFitnessResultEdit(){
+  if(!isClubProPlan()){alert('Fitness sessions require Club Pro.');return;}
+  var view=document.getElementById('fitnessResultContent');
+  var edit=document.getElementById('fitnessResultEditArea');
+  var btn=document.getElementById('fitnessEditToggleBtn');
+  var hint=document.getElementById('fitnessEditHint');
+  var editing=edit.style.display==='block';
+  if(!editing){
+    edit.value=fitnessSessionResult;
+    view.style.display='none';edit.style.display='block';
+    btn.textContent='👁️ Preview';
+    hint.textContent='Keep "PHASE: name | duration | description" lines in this format so the timeline displays correctly once saved.';
+  } else {
+    view.innerHTML=formatFitnessResult(fitnessSessionResult);
+    view.style.display='block';edit.style.display='none';
+    btn.textContent='✏️ Edit Before Saving';
+    hint.textContent='';
+  }
+}
+
 document.addEventListener('DOMContentLoaded',function(){
 (async()=>{
   try{
@@ -5279,10 +5319,12 @@ document.addEventListener('DOMContentLoaded',function(){
     <div id="aiResultArea" style="display:none">
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <div id="aiResultContent" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <textarea id="aiResultEditArea" style="display:none;width:100%;min-height:300px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;padding:12px;resize:vertical" oninput="aiSessionResult=this.value"></textarea>
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn" style="flex:1" onclick="saveAiSession()">💾 Save Session</button>
-        <button class="btn-ghost" style="flex:1" onclick="document.getElementById('aiResultArea').style.display='none'">Clear</button>
+        <button class="btn-ghost" id="aiEditToggleBtn" style="flex:1" onclick="toggleAiResultEdit()">✏️ Edit Before Saving</button>
       </div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="document.getElementById('aiResultArea').style.display='none'">Clear</button>
     </div>
 
     <div id="aiErrorMsg" class="msg" style="display:none"></div>
@@ -5347,10 +5389,12 @@ document.addEventListener('DOMContentLoaded',function(){
     <div id="aiResultArea" style="display:none">
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <div id="aiResultContent" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <textarea id="aiResultEditArea" style="display:none;width:100%;min-height:300px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;padding:12px;resize:vertical" oninput="aiSessionResult=this.value"></textarea>
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn" style="flex:1" onclick="saveAiSession()">💾 Save Session</button>
-        <button class="btn-ghost" style="flex:1" onclick="document.getElementById('aiResultArea').style.display='none'">Clear</button>
+        <button class="btn-ghost" id="aiEditToggleBtn" style="flex:1" onclick="toggleAiResultEdit()">✏️ Edit Before Saving</button>
       </div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="document.getElementById('aiResultArea').style.display='none'">Clear</button>
     </div>
 
     <div id="aiErrorMsg" class="msg" style="display:none"></div>
@@ -5453,10 +5497,13 @@ document.addEventListener('DOMContentLoaded',function(){
     <div id="fitnessResultArea" style="display:none">
       <div style="height:1px;background:var(--border);margin:16px 0"></div>
       <div id="fitnessResultContent" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <textarea id="fitnessResultEditArea" style="display:none;width:100%;min-height:300px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;padding:12px;resize:vertical" oninput="fitnessSessionResult=this.value"></textarea>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fitnessEditHint"></div>
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn" style="flex:1" onclick="saveFitnessSession()">💾 Save to Fitness Library</button>
-        <button class="btn-ghost" style="flex:1" onclick="document.getElementById('fitnessResultArea').style.display='none';document.getElementById('fitnessPromptArea').style.display='block'">New Session</button>
+        <button class="btn-ghost" id="fitnessEditToggleBtn" style="flex:1" onclick="toggleFitnessResultEdit()">✏️ Edit Before Saving</button>
       </div>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="document.getElementById('fitnessResultArea').style.display='none';document.getElementById('fitnessPromptArea').style.display='block'">New Session</button>
     </div>
   </div>
 </div>
