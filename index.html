@@ -4969,7 +4969,7 @@ function setEditTool(tool){
 }
 
 function editBuilderHintText(){
-  var hints={attacker:'Tap pitch to place attacker',defender:'Tap pitch to place defender',gk:'Tap pitch to place goalkeeper',ball:'Tap pitch to place ball',pass:'Tap START point of pass arrow',run:'Tap START point of run arrow',shot:'Tap START point of shot arrow',pen:'Tap START point of line',erase:'Tap element to erase'};
+  var hints={attacker:'Tap empty space to place, drag existing players to move',defender:'Tap empty space to place, drag existing players to move',gk:'Tap empty space to place, drag to move',ball:'Tap empty space to place, drag to move',pass:'Tap START point of pass arrow',run:'Tap START point of run arrow',shot:'Tap START point of shot arrow',pen:'Tap START point of line',erase:'Tap element to erase'};
   return hints[editBuilderTool]||'Tap pitch';
 }
 
@@ -5041,22 +5041,91 @@ function renderEditBuilderPitch(){
   svg.innerHTML=html;
   if(!svg._editBuilderBound){
     svg._editBuilderBound=true;
+    var dragIdx=-1, dragMoved=false, downPt=null;
+
+    function svgPoint(clientX,clientY){
+      var rect=svg.getBoundingClientRect();
+      return {
+        x:Math.round((clientX-rect.left)*(200/rect.width)),
+        y:Math.round((clientY-rect.top)*(280/rect.height))
+      };
+    }
+
+    function findDraggableAt(x,y){
+      // Only point-based elements (with x/y, not arrows or lines) can be dragged.
+      var draggableTypes=['attacker','defender','gk','ball','neutral','cone','pole','goal','mini_goal'];
+      var minDist=999,minIdx=-1;
+      editBuilderElements.forEach(function(el,i){
+        if(draggableTypes.indexOf(el.type)<0)return;
+        if(!('x' in el))return;
+        var d=Math.sqrt((el.x-x)*(el.x-x)+(el.y-y)*(el.y-y));
+        if(d<minDist){minDist=d;minIdx=i;}
+      });
+      return (minIdx>=0 && minDist<14) ? minIdx : -1;
+    }
+
+    function onDown(x,y){
+      downPt={x:x,y:y};
+      dragMoved=false;
+      // Dragging is only offered for placement tools (not pass/run/shot/pen/erase),
+      // so those tools keep their existing tap-start/tap-end behaviour untouched.
+      var placementTools=['attacker','defender','gk','ball'];
+      if(placementTools.indexOf(editBuilderTool)>=0){
+        dragIdx=findDraggableAt(x,y);
+      } else {
+        dragIdx=-1;
+      }
+    }
+
+    function onMove(x,y){
+      if(dragIdx<0)return;
+      dragMoved=true;
+      editBuilderElements[dragIdx].x=x;
+      editBuilderElements[dragIdx].y=y;
+      renderEditBuilderPitch();
+    }
+
+    function onUp(x,y){
+      if(dragIdx>=0 && dragMoved){
+        // Drag completed — element already updated live during move, nothing further to do.
+        dragIdx=-1;dragMoved=false;downPt=null;
+        return;
+      }
+      // No drag happened — treat as a normal tap (existing place/arrow/erase behaviour).
+      dragIdx=-1;dragMoved=false;downPt=null;
+      handleEditBuilderClick(x,y);
+    }
+
+    svg.addEventListener('touchstart',function(e){
+      var t=e.touches[0];var p=svgPoint(t.clientX,t.clientY);
+      onDown(p.x,p.y);
+    },{passive:true});
+    svg.addEventListener('touchmove',function(e){
+      if(dragIdx<0)return;
+      e.preventDefault();
+      var t=e.touches[0];var p=svgPoint(t.clientX,t.clientY);
+      onMove(p.x,p.y);
+    },{passive:false});
     svg.addEventListener('touchend',function(e){
       e.preventDefault();
-      var rect=svg.getBoundingClientRect();
-      var t=e.changedTouches[0];
-      handleEditBuilderClick(
-        Math.round((t.clientX-rect.left)*(200/rect.width)),
-        Math.round((t.clientY-rect.top)*(280/rect.height))
-      );
+      var t=e.changedTouches[0];var p=svgPoint(t.clientX,t.clientY);
+      onUp(p.x,p.y);
     },{passive:false});
-    svg.addEventListener('click',function(e){
+
+    svg.addEventListener('mousedown',function(e){
       if(e.sourceCapabilities&&e.sourceCapabilities.firesTouchEvents)return;
-      var rect=svg.getBoundingClientRect();
-      handleEditBuilderClick(
-        Math.round((e.clientX-rect.left)*(200/rect.width)),
-        Math.round((e.clientY-rect.top)*(280/rect.height))
-      );
+      var p=svgPoint(e.clientX,e.clientY);
+      onDown(p.x,p.y);
+    });
+    svg.addEventListener('mousemove',function(e){
+      if(dragIdx<0)return;
+      var p=svgPoint(e.clientX,e.clientY);
+      onMove(p.x,p.y);
+    });
+    svg.addEventListener('mouseup',function(e){
+      if(e.sourceCapabilities&&e.sourceCapabilities.firesTouchEvents)return;
+      var p=svgPoint(e.clientX,e.clientY);
+      onUp(p.x,p.y);
     });
   }
 }
