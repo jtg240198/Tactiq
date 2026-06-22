@@ -466,6 +466,12 @@ body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,
 .edit-banner-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);flex-shrink:0}
 .edit-banner span{font-size:11px;color:#FFE066;font-weight:600}
 .footer-note{font-size:10px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+
+.anim-controls{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:rgba(10,37,74,0.7);border-radius:8px;border:1px solid rgba(0,194,255,0.15)}
+.anim-btn{background:rgba(0,194,255,0.12);border:1px solid rgba(0,194,255,0.3);color:#00C2FF;font-size:13px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.anim-btn:active{background:rgba(0,194,255,0.25)}
+.anim-btn.playing{background:rgba(0,194,255,0.2);color:#fff}
+.anim-label{font-size:10px;color:var(--muted);font-weight:600;flex:1}
 </style>
 
 <!-- Meta Pixel — ADD YOUR PIXEL ID HERE BEFORE RUNNING PAID ADS -->
@@ -3938,7 +3944,7 @@ function tryStartSession(){
 function _doTryStartSession(){
   if(userPlan==='free'&&monthSessions>=3){showScreen('plansScreen');return;}
   STEPS=getSteps();
-  if(isClubPlan()){openClubProfiles();return;}
+  if(isClubPlan()){_showSessionTypeChoice();return;}
   if(coachingProfile){
     quickFocus='';
     setupQuickSession();
@@ -3947,6 +3953,37 @@ function _doTryStartSession(){
     stepIdx=0;answers={};multiSel=[];
     showScreen('questionScreen');renderStep();
   }
+}
+
+function _showSessionTypeChoice(){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,15,26,0.95);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  var d=document.createElement('div');
+  d.style.cssText='background:#0F2540;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;max-width:340px;width:100%';
+  var h=document.createElement('div');
+  h.style.cssText='font-size:20px;font-weight:800;text-transform:uppercase;color:#E8F0F8;margin-bottom:6px';
+  h.innerHTML='Build a <span style="color:#00C2FF">Session</span>';
+  var p=document.createElement('p');
+  p.style.cssText='font-size:12px;color:#7A94B0;margin-bottom:18px';
+  p.textContent='Choose the type of session to build.';
+  var teamBtn=document.createElement('button');
+  teamBtn.style.cssText='width:100%;background:linear-gradient(135deg,#00C2FF,#0099CC);color:#06131F;font-weight:800;font-size:14px;padding:14px;border-radius:10px;border:none;margin-bottom:10px;cursor:pointer;touch-action:manipulation;display:block;text-align:center';
+  teamBtn.innerHTML='&#x1F465; Team Session<br><span style="font-size:11px;font-weight:600;opacity:0.8">Use a Team Profile</span>';
+  var soloBtn=document.createElement('button');
+  soloBtn.style.cssText='width:100%;background:#13304F;color:#E8F0F8;font-weight:700;font-size:14px;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);margin-bottom:10px;cursor:pointer;touch-action:manipulation;display:block;text-align:center';
+  soloBtn.innerHTML='&#x26A1; Solo Session<br><span style="font-size:11px;font-weight:600;opacity:0.7">Quick individual session</span>';
+  var cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='width:100%;background:none;color:#7A94B0;font-size:13px;padding:8px;border:none;cursor:pointer';
+  cancelBtn.textContent='Cancel';
+  d.appendChild(h);d.appendChild(p);d.appendChild(teamBtn);d.appendChild(soloBtn);d.appendChild(cancelBtn);
+  overlay.appendChild(d);
+  document.body.appendChild(overlay);
+  teamBtn.onclick=function(){overlay.remove();openClubProfiles();};
+  soloBtn.onclick=function(){overlay.remove();
+    if(coachingProfile){quickFocus='';setupQuickSession();showScreen('quickSessionScreen');}
+    else{stepIdx=0;answers={};multiSel=[];showScreen('questionScreen');renderStep();}
+  };
+  cancelBtn.onclick=function(){overlay.remove();};
 }
 
 // ══════════════════════════════════════════════
@@ -4045,7 +4082,7 @@ function renderSessionContent(s){
         <div class="ph-row"><span class="ph-tag" style="background:${c}22;color:${c}">${p.phase}</span><span class="ph-dur">${p.duration||''}</span></div>
         <div class="ph-title">${p.title}</div>
         <div class="ph-desc">${p.desc}</div>
-        ${pDiag?`<div class="diagram-wrap" style="margin-top:10px"><div class="diagram-label">📐 ${p.phase} Setup Diagram</div>${pDiag}</div>`:''}
+        ${pDiag?`<div class="diagram-wrap" style="margin-top:10px"><div class="diagram-label">📐 ${p.phase} Setup Diagram</div>${pDiag}${buildAnimControls(p,pTmpl,i)}</div>`:''}
         ${pts?`<div class="cp-label" style="color:${c}">UEFA Coaching Points</div><ul class="cp-ul">${pts}</ul>`:''}
       </div>`;
     }).join('')}
@@ -4853,6 +4890,10 @@ function openEditSession(i){
   if(!isCoachPlan()&&!isClubPlan())return; // Coach, Club and Club Pro can edit
   var s=userSessions[i];if(!s)return;
   editSessionIndex=i;
+  // Normalize snake_case DB field to camelCase — same as viewSession() does.
+  // Without this, s.sessionId is undefined and template lookup falls to title-match only.
+  if(!s.sessionId && s.session_id) s.sessionId=s.session_id;
+  if(!s.isTeam && s.is_team) s.isTeam=s.is_team;
   document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){el.classList.remove('active');});
   document.getElementById('editSessionScreen').classList.add('active');
   document.getElementById('editSessionSub').textContent=(s.focus||s.category||'')+(s.time?(' · '+s.time):'');
@@ -4918,8 +4959,14 @@ function openEditSession(i){
     }
     editOriginalDiagramSource='template';
   } else {
-    editOriginalDiagramSource='template';
+    editOriginalDiagramSource='none';
+    console.warn('[Edit Diagram] No recoverable diagram for session:',s.title,
+      '| This is expected for AI-generated and Fitness sessions.');
   }
+
+  console.log('[Edit Diagram] Resolved',editSessionPhases.length,'diagram(s) for session:',s.title,
+    '| sessionId:',s.sessionId,'| matched template:',matchedTmpl?matchedTmpl.title:'none found',
+    '| source:',editOriginalDiagramSource);
 
   if(editSessionPhases.length>1){
     phaseSel.innerHTML=editSessionPhases.map(function(p,idx){return '<option value="'+idx+'">'+p.label+'</option>';}).join('');
@@ -4930,6 +4977,23 @@ function openEditSession(i){
   editCurrentPhaseIdx=0;
   editBuilderElements=editSessionPhases.length?JSON.parse(JSON.stringify(editSessionPhases[0].elements)):[];
   editBuilderPlayerCount=editBuilderElements.filter(function(e){return e.type==='attacker'||e.type==='defender';}).length;
+
+  // Reset the listener-bound flag exactly once per fresh session open (not on every tab switch)
+  // so listeners attach cleanly for this session without stacking duplicates.
+  var editSvgEl=document.getElementById('editBuilderSvg');
+  if(editSvgEl) editSvgEl._editBuilderBound=false;
+
+  // Set the diagram hint text based on whether elements were recovered
+  var hintEl=document.getElementById('editBuilderHint');
+  if(hintEl){
+    if(editBuilderElements.length===0 && editOriginalDiagramSource==='none'){
+      hintEl.textContent='No diagram saved — use the tools above to build one from scratch';
+      hintEl.style.color='var(--muted)';
+    } else {
+      hintEl.textContent=editBuilderHintText();
+      hintEl.style.color='var(--accent)';
+    }
+  }
 
   switchEditTab('text');
   window.scrollTo(0,0);
@@ -4953,8 +5017,9 @@ function switchEditTab(tab){
   document.getElementById('editTextPane').style.display=tab==='text'?'block':'none';
   document.getElementById('editDiagramPane').style.display=tab==='diagram'?'block':'none';
   if(tab==='diagram'){
-    var svg=document.getElementById('editBuilderSvg');
-    if(svg) svg._editBuilderBound=false;
+    // Do NOT reset _editBuilderBound here — that would re-attach a duplicate set of
+    // listeners every time the user switches tabs, causing every tap/drag to fire twice.
+    // The flag is reset once per fresh session open instead, in openEditSession().
     renderEditBuilderPitch();
   }
 }
@@ -5255,6 +5320,420 @@ function toggleFitnessResultEdit(){
     hint.textContent='';
   }
 }
+
+// ══ DIAGRAM ANIMATION ENGINE ══════════════════════════════════════════════════
+
+// buildAnimControls: called from renderSessionContent template literal.
+// Returns the HTML for the Play/Pause/Restart bar IF the phase has animated steps.
+// pTmpl is the matched template phase (has raw elements with step fields).
+// p is the saved session phase (may or may not have setup).
+function buildAnimControls(p, pTmpl, phaseIdx){
+  // Get the raw elements from this phase's setup.
+  // IMPORTANT: p.setup survives the DB round-trip for Solo sessions (plain JSON).
+  // For Team sessions, p.setup is null — use pTmpl.setup (from live JS template).
+  // Never use p.diagram (it was a function, dropped by JSON.stringify → null in DB).
+  var setup = (p && p.setup && p.setup.elements && p.setup.elements.length) ? p.setup :
+              (pTmpl && pTmpl.setup && pTmpl.setup.elements && pTmpl.setup.elements.length) ? pTmpl.setup : null;
+  if(!setup || !setup.elements) return '';
+  var hasSteps = setup.elements.some(function(el){ return el.step; });
+  if(!hasSteps) return '';
+
+  // Encode elements as base64 JSON to safely embed in HTML attribute
+  var data = JSON.stringify({elements:setup.elements, vw:setup.vw||200, vh:setup.vh||200});
+  var encoded = btoa(unescape(encodeURIComponent(data)));
+
+  return '<div class="anim-controls" id="animCtrl_'+phaseIdx+'">' +
+    '<button class="anim-btn" onclick="animPlay(\''+phaseIdx+'\',\''+encoded+'\',this)" id="animPlayBtn_'+phaseIdx+'">▶ Play</button>' +
+    '<button class="anim-btn" onclick="animRestart(\''+phaseIdx+'\',\''+encoded+'\')" id="animRestartBtn_'+phaseIdx+'">↺ Restart</button>' +
+    '<span class="anim-label">Tap Play to animate this diagram</span>' +
+    '</div>';
+}
+
+// ── ANIMATION STATE ────────────────────────────────────────────────────────
+var _animState = {}; // keyed by phaseIdx: {raf, playing, step, t0, stepStart, steps, svgEl, origHtml, elements, vw, vh}
+
+// ── PUBLIC API ─────────────────────────────────────────────────────────────
+function animPlay(phaseIdx, encoded, btn){
+  var state = _animState[phaseIdx];
+  if(state && state.playing){
+    // Pause
+    _animPause(phaseIdx, btn);
+    return;
+  }
+  if(state && state.paused){
+    // Resume
+    _animResume(phaseIdx, btn);
+    return;
+  }
+  // Fresh start
+  _animStart(phaseIdx, encoded, btn);
+}
+
+function animRestart(phaseIdx, encoded){
+  _animStop(phaseIdx);
+  var btn = document.getElementById('animPlayBtn_'+phaseIdx);
+  _animStart(phaseIdx, encoded, btn);
+}
+
+// ── INTERNAL ───────────────────────────────────────────────────────────────
+function _animStop(phaseIdx){
+  var state = _animState[phaseIdx];
+  if(!state) return;
+  if(state.raf) cancelAnimationFrame(state.raf);
+  // Restore original SVG so the static diagram is visible again
+  if(state.svgEl && state.origSvgHtml !== undefined){
+    state.svgEl.innerHTML = state.origSvgHtml;
+  }
+  delete _animState[phaseIdx];
+}
+
+function _animPause(phaseIdx, btn){
+  var state = _animState[phaseIdx];
+  if(!state) return;
+  state.playing = false;
+  state.paused = true;
+  if(state.raf){ cancelAnimationFrame(state.raf); state.raf = null; }
+  if(btn){ btn.textContent = '▶ Play'; btn.classList.remove('playing'); }
+}
+
+function _animResume(phaseIdx, btn){
+  var state = _animState[phaseIdx];
+  if(!state) return;
+  state.playing = true;
+  state.paused = false;
+  state.stepStart = null; // will be set on next rAF tick
+  if(btn){ btn.textContent = '⏸ Pause'; btn.classList.add('playing'); }
+  state.raf = requestAnimationFrame(function(ts){ _animTick(phaseIdx, ts); });
+}
+
+function _animStart(phaseIdx, encoded, btn){
+  // Decode data
+  var data;
+  try{ data = JSON.parse(decodeURIComponent(escape(atob(encoded)))); }
+  catch(e){ console.error('animStart decode error', e); return; }
+
+  var elements = data.elements;
+  var vw = data.vw, vh = data.vh;
+
+  // Find the SVG element inside the diagram-wrap for this phase
+  var wrap = document.getElementById('animCtrl_'+phaseIdx);
+  if(!wrap) return;
+  var diagramWrap = wrap.parentElement;
+  var svgEl = diagramWrap ? diagramWrap.querySelector('svg') : null;
+  if(!svgEl) return;
+
+  // Build timeline: one step entry per unique step number
+  var steps = _buildTimeline(elements, vw, vh);
+  if(!steps.length){ console.warn('No animated steps found'); return; }
+
+  // Snapshot the original SVG inner markup before we modify it
+  var origSvgHtml = svgEl.innerHTML;
+
+  // Build the animated SVG: re-render all elements with IDs so we can target them
+  svgEl.innerHTML = _renderAnimatedElements(elements, vw, vh);
+
+  // Store state
+  _animState[phaseIdx] = {
+    raf: null,
+    playing: true,
+    paused: false,
+    stepIdx: 0,
+    stepStart: null,
+    steps: steps,
+    svgEl: svgEl,
+    origSvgHtml: origSvgHtml,
+    elements: elements,
+    vw: vw,
+    vh: vh
+  };
+
+  if(btn){ btn.textContent = '⏸ Pause'; btn.classList.add('playing'); }
+
+  _animState[phaseIdx].raf = requestAnimationFrame(function(ts){
+    _animTick(phaseIdx, ts);
+  });
+}
+
+// Build a sequential list of animation steps from the elements array.
+// Each step describes: which elements to animate, from where, to where, how long.
+function _buildTimeline(elements, vw, vh){
+  var STEP_DURATION_MS = 800; // ms per step
+  var SHOT_DURATION_MS = 400; // shots are faster
+
+  // Group animated elements by step number
+  var byStep = {};
+  elements.forEach(function(el){
+    if(!el.step) return;
+    if(!byStep[el.step]) byStep[el.step] = [];
+    byStep[el.step].push(el);
+  });
+
+  var stepNums = Object.keys(byStep).map(Number).sort(function(a,b){return a-b;});
+
+  // Build player position map: as steps execute, players move to their end position
+  // so the next step starts from where the previous one ended.
+  var playerPositions = {}; // key: label -> {x,y}
+  elements.forEach(function(el){
+    if(el.type==='attacker'||el.type==='defender'||el.type==='gk'||el.type==='neutral'){
+      playerPositions[el.label||el.type] = {x:el.x, y:el.y};
+    }
+    if(el.type==='ball'){
+      playerPositions['__ball__'] = {x:el.x, y:el.y};
+    }
+  });
+
+  var steps = [];
+  stepNums.forEach(function(stepNum){
+    var actions = byStep[stepNum];
+    var stepActions = [];
+    var stepDur = STEP_DURATION_MS;
+
+    actions.forEach(function(el){
+      var dur = el.type==='shot' ? SHOT_DURATION_MS : STEP_DURATION_MS;
+      if(dur > stepDur) stepDur = dur;
+
+      if(el.type==='pass'){
+        // Find nearest player to start point — they carry the ball
+        var nearest = _nearestPlayer(el.x1, el.y1, elements, playerPositions);
+        stepActions.push({
+          action:'move_player', label:nearest, x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2,
+          dur:dur, arrowEl:el
+        });
+        stepActions.push({
+          action:'move_ball', x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2, dur:dur
+        });
+        // Update position map for next step
+        if(nearest) playerPositions[nearest] = {x:el.x2, y:el.y2};
+        playerPositions['__ball__'] = {x:el.x2, y:el.y2};
+      } else if(el.type==='dribble'){
+        var nearest = _nearestPlayer(el.x1, el.y1, elements, playerPositions);
+        stepActions.push({
+          action:'move_player', label:nearest, x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2,
+          dur:dur, arrowEl:el
+        });
+        stepActions.push({
+          action:'move_ball', x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2, dur:dur
+        });
+        if(nearest) playerPositions[nearest] = {x:el.x2, y:el.y2};
+        playerPositions['__ball__'] = {x:el.x2, y:el.y2};
+      } else if(el.type==='run'){
+        var nearest = _nearestPlayer(el.x1, el.y1, elements, playerPositions);
+        stepActions.push({
+          action:'move_player', label:nearest, x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2,
+          dur:dur, arrowEl:el
+        });
+        if(nearest) playerPositions[nearest] = {x:el.x2, y:el.y2};
+      } else if(el.type==='shot'){
+        stepActions.push({
+          action:'move_ball', x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2, dur:dur
+        });
+        playerPositions['__ball__'] = {x:el.x2, y:el.y2};
+      }
+      // Arrow lines animate via stroke-dashoffset regardless of player
+      stepActions.push({action:'draw_arrow', arrowEl:el, dur:dur});
+    });
+
+    steps.push({stepNum:stepNum, actions:stepActions, dur:stepDur});
+  });
+
+  return steps;
+}
+
+function _nearestPlayer(x, y, elements, playerPositions){
+  // Find the label of the nearest player to x,y using current positions
+  var minDist = 999, nearest = null;
+  Object.keys(playerPositions).forEach(function(label){
+    if(label==='__ball__') return;
+    var pos = playerPositions[label];
+    var d = Math.sqrt((pos.x-x)*(pos.x-x) + (pos.y-y)*(pos.y-y));
+    if(d < minDist){ minDist=d; nearest=label; }
+  });
+  return (minDist < 30) ? nearest : null;
+}
+
+// Render elements into the SVG with unique IDs for animation targeting.
+// Static elements (no step) render normally. Animated lines start hidden (dashoffset = full length).
+function _renderAnimatedElements(elements, vw, vh){
+  var svg = '';
+  var SYM_LOCAL = {
+    ATTACKER:'#00C2FF', DEFENDER:'#FF4D6A', GK:'#FFB300', NEUTRAL:'#F9A825',
+    CONE:'#FF8A3D', PASS:'#00C2FF', RUN:'#FFD600', DRIBBLE:'#00E676', BALL:'#fff'
+  };
+
+  elements.forEach(function(el, i){
+    var id = 'anim_el_'+i;
+    var isAnimated = !!el.step;
+
+    switch(el.type){
+      case 'attacker':
+        svg += '<g id="'+id+'" transform="translate(0,0)">';
+        svg += '<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="'+SYM_LOCAL.ATTACKER+'" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>';
+        svg += '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">'+(el.label||'A')+'</text>';
+        svg += '</g>';
+        break;
+      case 'defender':
+        svg += '<g id="'+id+'" transform="translate(0,0)">';
+        svg += '<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="'+SYM_LOCAL.DEFENDER+'" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>';
+        svg += '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">'+(el.label||'D')+'</text>';
+        svg += '</g>';
+        break;
+      case 'gk':
+        svg += '<g id="'+id+'" transform="translate(0,0)">';
+        svg += '<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="'+SYM_LOCAL.GK+'" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>';
+        svg += '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#000" font-size="6.5" font-weight="bold">GK</text>';
+        svg += '</g>';
+        break;
+      case 'neutral':
+        svg += '<g id="'+id+'" transform="translate(0,0)">';
+        svg += '<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="'+SYM_LOCAL.NEUTRAL+'" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>';
+        svg += '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">'+(el.label||'N')+'</text>';
+        svg += '</g>';
+        break;
+      case 'ball':
+        svg += '<g id="anim_ball" transform="translate(0,0)">';
+        svg += '<circle cx="'+el.x+'" cy="'+el.y+'" r="5.5" fill="'+SYM_LOCAL.BALL+'" stroke="#999" stroke-width="0.8"/>';
+        svg += '</g>';
+        break;
+      case 'cone':
+        svg += '<polygon points="'+el.x+','+(el.y-7)+' '+(el.x-5)+','+(el.y+4)+' '+(el.x+5)+','+(el.y+4)+'" fill="'+SYM_LOCAL.CONE+'" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+        break;
+      case 'goal':
+        svg += '<rect x="'+(el.x-18)+'" y="'+(el.y-10)+'" width="36" height="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.6)" stroke-width="2" rx="1"/>';
+        break;
+      case 'mini_goal':
+        svg += '<rect x="'+(el.x-8)+'" y="'+(el.y-6)+'" width="16" height="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" rx="1"/>';
+        break;
+      case 'label':
+        svg += '<text x="'+el.x+'" y="'+el.y+'" text-anchor="'+(el.anchor||'middle')+'" fill="'+(el.color||'rgba(180,200,220,0.65)')+'" font-size="'+(el.size||8)+'">'+(el.text||el.label||'')+'</text>';
+        break;
+      case 'area':
+        svg += '<rect x="'+el.x+'" y="'+el.y+'" width="'+(el.w||30)+'" height="'+(el.h||30)+'" fill="'+(el.fill||'rgba(0,194,255,0.04)')+'" stroke="'+(el.stroke||'rgba(0,194,255,0.3)')+'" stroke-width="1.5" rx="2"/>';
+        break;
+      case 'pass':
+      case 'dribble':
+      case 'run':
+      case 'shot': {
+        var col = el.type==='pass'?SYM_LOCAL.PASS : el.type==='run'?SYM_LOCAL.RUN :
+                  el.type==='dribble'?SYM_LOCAL.DRIBBLE : '#FF4D6A';
+        var len = Math.sqrt((el.x2-el.x1)*(el.x2-el.x1)+(el.y2-el.y1)*(el.y2-el.y1));
+        var sw = el.type==='shot' ? 2.5 : 2;
+        var dash = el.type==='run' ? '5,3' : 'none';
+        // Line starts hidden (full dashoffset), animates to 0 during its step
+        var offset = isAnimated ? len : 0;
+        svg += '<line id="'+id+'_line" x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+
+               '" stroke="'+col+'" stroke-width="'+sw+'" stroke-dasharray="'+len+' '+len+
+               '" stroke-dashoffset="'+offset+'" stroke-dasharray="'+(dash!=='none'?dash:len+' '+len)+
+               '" opacity="0.85"/>';
+        // Arrowhead group — hidden initially if animated
+        var mid_id = 'anim_ah_'+i;
+        var ah = _arrowHead(el.x1,el.y1,el.x2,el.y2,col,sw);
+        svg += '<g id="'+mid_id+'" opacity="'+(isAnimated?0:1)+'">'+ah+'</g>';
+        break;
+      }
+    }
+  });
+  return svg;
+}
+
+function _arrowHead(x1,y1,x2,y2,col,sw){
+  var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+  var ux=dx/len, uy=dy/len;
+  var size=6;
+  var ax=x2-ux*size, ay=y2-uy*size;
+  var px=-uy*size*0.5, py=ux*size*0.5;
+  return '<polygon points="'+x2+','+y2+' '+(ax+px)+','+(ay+py)+' '+(ax-px)+','+(ay-py)+'" fill="'+col+'"/>';
+}
+
+// ── ANIMATION TICK ──────────────────────────────────────────────────────────
+function _animTick(phaseIdx, ts){
+  var state = _animState[phaseIdx];
+  if(!state || !state.playing) return;
+
+  if(state.stepStart === null) state.stepStart = ts;
+  var elapsed = ts - state.stepStart;
+  var step = state.steps[state.stepIdx];
+  if(!step){ _animFinish(phaseIdx); return; }
+
+  var t = Math.min(elapsed / step.dur, 1); // 0→1 progress through this step
+  var ease = _easeInOut(t);
+
+  // Execute all actions for this step at current t
+  step.actions.forEach(function(action){
+    _applyAction(action, ease, state.svgEl, state.elements);
+  });
+
+  if(t >= 1){
+    // Step complete — advance to next
+    state.stepIdx++;
+    state.stepStart = null;
+    if(state.stepIdx >= state.steps.length){
+      _animFinish(phaseIdx);
+      return;
+    }
+  }
+
+  state.raf = requestAnimationFrame(function(ts2){ _animTick(phaseIdx, ts2); });
+}
+
+function _applyAction(action, t, svgEl, elements){
+  if(action.action === 'move_player'){
+    // Find the player <g> element by its label
+    if(!action.label) return;
+    var playerGs = svgEl.querySelectorAll('g[id^="anim_el_"]');
+    var targetG = null;
+    for(var i=0;i<playerGs.length;i++){
+      var txt = playerGs[i].querySelector('text');
+      if(txt && txt.textContent.trim()===action.label){ targetG=playerGs[i]; break; }
+    }
+    if(!targetG) return;
+    var dx = (action.x2-action.x1)*t;
+    var dy = (action.y2-action.y1)*t;
+    targetG.setAttribute('transform', 'translate('+dx+','+dy+')');
+
+  } else if(action.action === 'move_ball'){
+    var ballG = svgEl.querySelector('#anim_ball');
+    if(!ballG) return;
+    var dx = (action.x2-action.x1)*t;
+    var dy = (action.y2-action.y1)*t;
+    ballG.setAttribute('transform', 'translate('+dx+','+dy+')');
+
+  } else if(action.action === 'draw_arrow'){
+    var el = action.arrowEl;
+    var idx = elements.indexOf(el);
+    if(idx<0) return;
+    var lineEl = svgEl.querySelector('#anim_el_'+idx+'_line');
+    var ahEl = svgEl.querySelector('#anim_ah_'+idx);
+    if(!lineEl) return;
+    var len = Math.sqrt((el.x2-el.x1)*(el.x2-el.x1)+(el.y2-el.y1)*(el.y2-el.y1));
+    // Animate dashoffset from len→0 (draws the line progressively)
+    lineEl.setAttribute('stroke-dashoffset', len*(1-t));
+    lineEl.setAttribute('stroke-dasharray', len+' '+len);
+    if(ahEl) ahEl.setAttribute('opacity', t > 0.8 ? ((t-0.8)/0.2) : 0);
+  }
+}
+
+function _animFinish(phaseIdx){
+  var state = _animState[phaseIdx];
+  if(!state) return;
+  state.playing = false;
+  if(state.raf){ cancelAnimationFrame(state.raf); state.raf = null; }
+  var btn = document.getElementById('animPlayBtn_'+phaseIdx);
+  if(btn){ btn.textContent = '▶ Play'; btn.classList.remove('playing'); }
+  // Show all arrows fully at end state — restore full visibility
+  if(state.svgEl){
+    state.svgEl.querySelectorAll('[id$="_line"]').forEach(function(l){
+      l.setAttribute('stroke-dashoffset','0');
+    });
+    state.svgEl.querySelectorAll('[id^="anim_ah_"]').forEach(function(a){
+      a.setAttribute('opacity','1');
+    });
+  }
+}
+
+function _easeInOut(t){
+  return t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+}
+
 
 document.addEventListener('DOMContentLoaded',function(){
 (async()=>{
