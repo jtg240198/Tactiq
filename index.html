@@ -5103,7 +5103,10 @@ function editBuilderHintText(){
 }
 
 function renderEditBuilderPitch(){
-  var svg=document.getElementById('editBuilderSvg');if(!svg)return;
+  var svg=document.getElementById('editBuilderSvg');
+  var dbgHint=document.getElementById('editBuilderHint');
+  if(dbgHint) dbgHint.textContent='[RENDER] elements:'+editBuilderElements.length+' svg:'+(svg?'found':'MISSING');
+  if(!svg)return;
   var lc='rgba(255,255,255,0.6)';
   var html='<rect width="200" height="280" fill="#2d7a3a"/>'+
     '<rect x="0" y="0" width="200" height="280" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
@@ -5114,10 +5117,6 @@ function renderEditBuilderPitch(){
     '<circle cx="100" cy="232" r="2" fill="'+lc+'"/>'+
     '<circle cx="2" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
     '<circle cx="198" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
-
-  // DEBUG: Always show element count so we can confirm render is running
-  html += '<text x="100" y="15" text-anchor="middle" fill="yellow" font-size="10" font-weight="bold">'+
-    'Elements: '+editBuilderElements.length+'</text>';
 
   if(editBuilderRunStart && ['pass','run','shot','pen'].includes(editBuilderTool)){
     var pcol=editBuilderTool==='pass'?'#00C2FF':editBuilderTool==='shot'?'#FF4D6A':editBuilderTool==='pen'?'#E8F0F8':'#FFD600';
