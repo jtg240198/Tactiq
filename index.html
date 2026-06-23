@@ -4931,9 +4931,31 @@ function openEditSession(i){
   var matchedTmpl=s.sessionId?allTemplatesForLookup.find(function(t){return t.id===s.sessionId;}):
     allTemplatesForLookup.find(function(t){return t.title===s.title;});
 
+  // Priority 0: SESSION_SETUPS is the authoritative phase+diagram source.
+  // buildSession uses pickSession (TEAM_SESSIONS/SOLO_SESSIONS) to build sessions,
+  // but renderSessionContent uses SESSION_SETUPS for diagram display.
+  // Both use the same session IDs (t1, t4, s1 etc) so SESSION_SETUPS[sessionId]
+  // gives us the full phases with setup.elements — the real diagram data.
+  var sessionSetupData=null;
+  if(s.sessionId && typeof SESSION_SETUPS!=='undefined' && SESSION_SETUPS[s.sessionId]){
+    sessionSetupData=SESSION_SETUPS[s.sessionId];
+  }
+
   if(s.elements && Array.isArray(s.elements) && s.elements.length){
     editBuilderElements=JSON.parse(JSON.stringify(s.elements));
     editOriginalDiagramSource='custom';
+  } else if(sessionSetupData && sessionSetupData.phases && sessionSetupData.phases.some(function(p){
+      return p.setup && p.setup.elements && p.setup.elements.length;
+    })){
+    sessionSetupData.phases.forEach(function(ph){
+      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
+        editSessionPhases.push({
+          label:ph.title||ph.phase||'Phase',
+          elements:rescaleElementsToBuilder(ph.setup.elements,ph.setup.vw,ph.setup.vh)
+        });
+      }
+    });
+    editOriginalDiagramSource='template';
   } else if(s.phases && s.phases.length && s.phases.some(function(p,i){
       return (p.setup && p.setup.elements && p.setup.elements.length) ||
              (matchedTmpl && matchedTmpl.phases && matchedTmpl.phases[i] && matchedTmpl.phases[i].setup && matchedTmpl.phases[i].setup.elements && matchedTmpl.phases[i].setup.elements.length);
