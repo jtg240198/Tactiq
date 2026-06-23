@@ -4989,6 +4989,13 @@ function openEditSession(i){
     if(editBuilderElements.length===0 && editOriginalDiagramSource==='none'){
       hintEl.textContent='No diagram saved — use the tools above to build one from scratch';
       hintEl.style.color='var(--muted)';
+    } else if(editBuilderElements.length===0){
+      // Diagnostic: show WHY it's blank so we can identify the failure
+      var diagMsg='[DIAG] sessionId:'+s.sessionId+' | phases:'+JSON.stringify((s.phases||[]).map(function(p){return{phase:p.phase,hasSetup:!!(p.setup&&p.setup.elements)};}))+' | phasesFound:'+editSessionPhases.length+' | source:'+editOriginalDiagramSource;
+      hintEl.textContent=diagMsg;
+      hintEl.style.color='#FFD600';
+      hintEl.style.fontSize='9px';
+      hintEl.style.wordBreak='break-all';
     } else {
       hintEl.textContent=editBuilderHintText();
       hintEl.style.color='var(--accent)';
