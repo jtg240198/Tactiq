@@ -4003,10 +4003,7 @@ async function saveSession(session){
   if(!error&&data){
     userSessions.unshift(data[0]);
     monthSessions++;
-    // Write DB-assigned id back onto the session object so that
-    // openEditCurrentSession() can find it in userSessions by id.
-    // Without this, currentSession.id is undefined and Edit Diagram fails.
-    if(session) session.id=data[0].id;
+    if(session) session.id=data[0].id; // write DB uuid back so openEditCurrentSession can find it
   }
   document.getElementById('statTotal').textContent=userSessions.length;
 }
@@ -4830,223 +4827,253 @@ var editBuilderElements=[];
 var editBuilderPlayerCount=0;
 var editBuilderTool='attacker';
 var editBuilderRunStart=null;
-var editOriginalDiagramSource='template'; // 'template' or 'custom'
+var editOriginalDiagramSource='none';
+var editSessionPhases=[];
+var editCurrentPhaseIdx=0;
 
+// ── COORDINATE NORMALIZATION ─────────────────────────────────────────────────
+// Templates use two arrow coordinate formats:
+//   TEAM_SESSIONS:    {type:'pass', x:140, y:158, x2:140, y2:88}   (x/y for start)
+//   SESSION_SETUPS:   {type:'run',  x1:60, y1:143, x2:35, y2:60}   (x1/y1 for start)
+// The renderer always reads x1/y1. This function normalises both to x1/y1.
+function rescaleElementsToBuilder(elements, vw, vh){
+  var sx = 200 / (vw || 200);
+  var sy = 280 / (vh || 280);
+  var arrowTypes = ['pass','run','shot','dribble','pen'];
+  return (elements || []).map(function(e){
+    var ne = {type: e.type};
+    if(arrowTypes.indexOf(e.type) >= 0){
+      // Normalise start point: prefer x1/y1, fall back to x/y
+      ne.x1 = Math.round(('x1' in e ? e.x1 : (e.x || 0)) * sx);
+      ne.y1 = Math.round(('y1' in e ? e.y1 : (e.y || 0)) * sy);
+      if('x2' in e) ne.x2 = Math.round(e.x2 * sx);
+      if('y2' in e) ne.y2 = Math.round(e.y2 * sy);
+    } else {
+      if('x'  in e) ne.x  = Math.round(e.x  * sx);
+      if('y'  in e) ne.y  = Math.round(e.y  * sy);
+      if('x1' in e) ne.x1 = Math.round(e.x1 * sx);
+      if('y1' in e) ne.y1 = Math.round(e.y1 * sy);
+      if('x2' in e) ne.x2 = Math.round(e.x2 * sx);
+      if('y2' in e) ne.y2 = Math.round(e.y2 * sy);
+      if('w'  in e) ne.w  = Math.round(e.w  * sx);
+      if('h'  in e) ne.h  = Math.round(e.h  * sy);
+    }
+    ['label','text','fill','stroke','dashed','color','anchor','size','step'].forEach(function(k){
+      if(k in e) ne[k] = e[k];
+    });
+    return ne;
+  });
+}
+
+// ── DIAGRAM EXTRACTION FROM FUNCTION SOURCE ──────────────────────────────────
+// TEAM_SESSIONS store diagrams as: diagram:()=>renderSetupDiagram({...})
+// The elements object is inside the function body. We extract it by reading
+// the function source as a string and evaluating the argument object.
+function extractSetupFromDiagramFn(fn){
+  if(typeof fn !== 'function') return null;
+  try{
+    var src = fn.toString();
+    var callIdx = src.indexOf('renderSetupDiagram(');
+    if(callIdx < 0) return null;
+    var start = src.indexOf('{', callIdx);
+    if(start < 0) return null;
+    var depth = 0, end = -1;
+    for(var i = start; i < src.length; i++){
+      if(src[i] === '{') depth++;
+      else if(src[i] === '}'){depth--; if(depth === 0){end = i; break;}}
+    }
+    if(end < 0) return null;
+    return (new Function('return ' + src.slice(start, end + 1)))();
+  } catch(e){
+    console.warn('[EditDiagram] extractSetupFromDiagramFn failed:', e.message);
+    return null;
+  }
+}
+
+// ── OPEN EDIT SESSION ─────────────────────────────────────────────────────────
+// Entry point called with the index of the session in userSessions array.
+// Resolves diagram elements from every available source, populates
+// editBuilderElements, then shows the edit screen.
+function openEditSession(i){
+  if(!isCoachPlan() && !isClubPlan()) return;
+  var s = userSessions[i];
+  if(!s){ console.warn('[EditDiagram] openEditSession: no session at index', i); return; }
+  editSessionIndex = i;
+
+  // Normalise snake_case DB fields to camelCase
+  if(!s.sessionId && s.session_id) s.sessionId = s.session_id;
+  if(s.isTeam === undefined && s.is_team !== undefined) s.isTeam = s.is_team;
+
+  // Navigate to edit screen
+  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){
+    el.classList.remove('active');
+  });
+  document.getElementById('editSessionScreen').classList.add('active');
+  document.getElementById('editSessionSub').textContent =
+    (s.focus || s.category || '') + (s.time ? (' · ' + s.time) : '');
+  document.getElementById('editTitleInput').value = s.title || '';
+
+  // ── Build editable text ──────────────────────────────────────────────────
+  var bodyText = '';
+  if(s.content){ bodyText = s.content; }
+  else{
+    if(s.overview) bodyText += 'OVERVIEW\n' + s.overview + '\n\n';
+    if(s.tip) bodyText += 'COACHING TIP\n' + s.tip + '\n\n';
+    if(s.phases && s.phases.length){
+      s.phases.forEach(function(ph){
+        bodyText += (ph.name || ph.phase || 'Phase').toUpperCase() + '\n';
+        if(ph.desc) bodyText += ph.desc + '\n';
+        if(ph.points && ph.points.length)
+          bodyText += 'Coaching points:\n' + ph.points.map(function(p){return '- '+p;}).join('\n') + '\n';
+        bodyText += '\n';
+      });
+    }
+  }
+  document.getElementById('editContentInput').value = bodyText;
+
+  // ── Resolve diagram elements ─────────────────────────────────────────────
+  editSessionPhases = [];
+  editCurrentPhaseIdx = 0;
+  editBuilderElements = [];
+  editOriginalDiagramSource = 'none';
+
+  // Find matching template (SOLO_SESSIONS + TEAM_SESSIONS arrays)
+  var allTemplates = [].concat(
+    typeof SOLO_SESSIONS !== 'undefined' ? SOLO_SESSIONS : [],
+    typeof TEAM_SESSIONS !== 'undefined' ? TEAM_SESSIONS : []
+  );
+  var matchedTmpl = s.sessionId
+    ? allTemplates.find(function(t){ return t.id === s.sessionId; })
+    : allTemplates.find(function(t){ return t.title === s.title; });
+
+  // SOURCE 1: Previously edited custom elements saved in DB
+  if(s.elements && Array.isArray(s.elements) && s.elements.length){
+    editBuilderElements = JSON.parse(JSON.stringify(s.elements));
+    editOriginalDiagramSource = 'custom';
+    console.log('[EditDiagram] SOURCE 1 (custom elements):', editBuilderElements.length);
+
+  // SOURCE 2: Per-phase setup.elements from saved session phases (Solo sessions)
+  } else if(s.phases && s.phases.some(function(p){
+    return p.setup && p.setup.elements && p.setup.elements.length;
+  })){
+    s.phases.forEach(function(ph){
+      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
+        editSessionPhases.push({
+          label: ph.title || ph.phase || 'Phase',
+          elements: rescaleElementsToBuilder(ph.setup.elements, ph.setup.vw, ph.setup.vh)
+        });
+      }
+    });
+    editOriginalDiagramSource = 'template';
+    console.log('[EditDiagram] SOURCE 2 (saved phase setup):', editSessionPhases.length, 'phases');
+
+  // SOURCE 3: Per-phase setup.elements from matched template (Solo sessions via template lookup)
+  } else if(matchedTmpl && matchedTmpl.phases && matchedTmpl.phases.some(function(p){
+    return p.setup && p.setup.elements && p.setup.elements.length;
+  })){
+    matchedTmpl.phases.forEach(function(ph){
+      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
+        editSessionPhases.push({
+          label: ph.title || ph.phase || 'Phase',
+          elements: rescaleElementsToBuilder(ph.setup.elements, ph.setup.vw, ph.setup.vh)
+        });
+      }
+    });
+    editOriginalDiagramSource = 'template';
+    console.log('[EditDiagram] SOURCE 3 (template phase setup):', editSessionPhases.length, 'phases');
+
+  // SOURCE 4: Top-level diagram function (Team sessions — most common case)
+  } else if(matchedTmpl && typeof matchedTmpl.diagram === 'function'){
+    var setup = extractSetupFromDiagramFn(matchedTmpl.diagram);
+    if(setup && setup.elements && setup.elements.length){
+      editSessionPhases.push({
+        label: s.title || 'Diagram',
+        elements: rescaleElementsToBuilder(setup.elements, setup.vw, setup.vh)
+      });
+      editOriginalDiagramSource = 'template';
+      console.log('[EditDiagram] SOURCE 4 (diagram fn):', setup.elements.length, 'elements');
+    }
+  }
+
+  // If phases found, use first phase as starting elements
+  if(editSessionPhases.length > 0 && editBuilderElements.length === 0){
+    editBuilderElements = JSON.parse(JSON.stringify(editSessionPhases[0].elements));
+  }
+
+  editBuilderPlayerCount = editBuilderElements.filter(function(e){
+    return e.type === 'attacker' || e.type === 'defender';
+  }).length;
+
+  console.log('[EditDiagram] Final: elements='+editBuilderElements.length+
+    ' phases='+editSessionPhases.length+' source='+editOriginalDiagramSource);
+
+  // ── Phase selector ───────────────────────────────────────────────────────
+  var phaseSelWrap = document.getElementById('editPhaseSelectorWrap');
+  var phaseSel = document.getElementById('editPhaseSelector');
+  if(phaseSelWrap && phaseSel){
+    if(editSessionPhases.length > 1){
+      phaseSel.innerHTML = editSessionPhases.map(function(p, idx){
+        return '<option value="'+idx+'">'+p.label+'</option>';
+      }).join('');
+      phaseSelWrap.style.display = 'block';
+    } else {
+      phaseSelWrap.style.display = 'none';
+    }
+  }
+
+  // Reset SVG listener flag so fresh listeners attach on first render
+  var editSvgEl = document.getElementById('editBuilderSvg');
+  if(editSvgEl) editSvgEl._editBuilderBound = false;
+
+  switchEditTab('text');
+  window.scrollTo(0, 0);
+}
+
+// ── OPEN EDIT SESSION FROM CURRENT SESSION ────────────────────────────────────
+// Called from the Edit button on the session result screen.
+// Finds the session in userSessions by id (set by saveSession after DB insert).
 function openEditCurrentSession(){
-  if(!currentSession||!currentSession.id){
-    alert('[DEBUG] BLOCKED: currentSession.id='+( currentSession?currentSession.id:'no session'));
+  if(!currentSession){
+    console.warn('[EditDiagram] openEditCurrentSession: no currentSession');
     return;
   }
-  var idx=userSessions.findIndex(function(s){return s.id===currentSession.id;});
-  if(idx<0){
-    alert('[DEBUG] NOT FOUND: id='+currentSession.id+' userSessions='+userSessions.length);
+  if(!currentSession.id){
+    console.warn('[EditDiagram] openEditCurrentSession: currentSession has no id — was saveSession awaited?');
+    // Fallback: find by sessionId/title since id may not be set
+    var idx = userSessions.findIndex(function(s){
+      return s.session_id === currentSession.sessionId || s.title === currentSession.title;
+    });
+    if(idx >= 0){ openEditSession(idx); return; }
+    console.warn('[EditDiagram] openEditCurrentSession: fallback also failed');
+    return;
+  }
+  var idx = userSessions.findIndex(function(s){ return s.id === currentSession.id; });
+  if(idx < 0){
+    console.warn('[EditDiagram] openEditCurrentSession: id not found in userSessions');
+    // Fallback: index 0 since saveSession does unshift(data[0])
+    if(userSessions.length > 0){ openEditSession(0); return; }
     return;
   }
   openEditSession(idx);
 }
 
-var editSessionPhases=[]; // list of {label, elements, vw, vh} extracted from the current session
-var editCurrentPhaseIdx=0;
-
-function rescaleElementsToBuilder(elements,vw,vh){
-  // Builder canvas is fixed 200x280 portrait. Template diagrams use their own vw/vh.
-  // Rescale every coordinate proportionally so positions land correctly on the builder pitch.
-  var sx=200/(vw||200), sy=280/(vh||280);
-  var arrowTypes=['pass','run','shot','dribble','pen'];
-  return (elements||[]).map(function(e){
-    var ne={type:e.type};
-    // TEAM_SESSIONS uses {x,y,x2,y2} for arrow start/end.
-    // SESSION_SETUPS uses {x1,y1,x2,y2}.
-    // Renderer always reads x1/y1. Normalize x/y → x1/y1 for arrow types.
-    if(arrowTypes.indexOf(e.type)>=0){
-      // Start point: prefer x1/y1, fall back to x/y
-      var sx1='x1' in e ? e.x1 : ('x' in e ? e.x : 0);
-      var sy1='y1' in e ? e.y1 : ('y' in e ? e.y : 0);
-      ne.x1=Math.round(sx1*sx);
-      ne.y1=Math.round(sy1*sy);
-      if('x2' in e) ne.x2=Math.round(e.x2*sx);
-      if('y2' in e) ne.y2=Math.round(e.y2*sy);
-    } else {
-      if('x' in e) ne.x=Math.round(e.x*sx);
-      if('y' in e) ne.y=Math.round(e.y*sy);
-      if('x1' in e) ne.x1=Math.round(e.x1*sx);
-      if('y1' in e) ne.y1=Math.round(e.y1*sy);
-      if('x2' in e) ne.x2=Math.round(e.x2*sx);
-      if('y2' in e) ne.y2=Math.round(e.y2*sy);
-    }
-    if('w' in e) ne.w=Math.round(e.w*sx);
-    if('h' in e) ne.h=Math.round(e.h*sy);
-    if('label' in e) ne.label=e.label;
-    if('text' in e) ne.text=e.text;
-    if('fill' in e) ne.fill=e.fill;
-    if('stroke' in e) ne.stroke=e.stroke;
-    if('dashed' in e) ne.dashed=e.dashed;
-    if('color' in e) ne.color=e.color;
-    if('anchor' in e) ne.anchor=e.anchor;
-    if('size' in e) ne.size=e.size;
-    if('step' in e) ne.step=e.step;
-    return ne;
-  });
-}
-
-function extractSetupFromDiagramFn(fn){
-  // Reads a template's diagram()=>renderSetupDiagram({...}) function as source text
-  // and recovers the {...} setup object so Edit Diagram can load real coordinates.
-  // This never modifies the template — it only reads its source to extract data.
-  if(typeof fn!=='function') return null;
-  try{
-    var src=fn.toString();
-    var callIdx=src.indexOf('renderSetupDiagram(');
-    if(callIdx<0) return null;
-    var start=src.indexOf('{',callIdx);
-    if(start<0) return null;
-    var depth=0,end=-1;
-    for(var i=start;i<src.length;i++){
-      if(src[i]==='{')depth++;
-      else if(src[i]==='}'){depth--;if(depth===0){end=i;break;}}
-    }
-    if(end<0) return null;
-    var objSrc=src.slice(start,end+1);
-    return (new Function('return '+objSrc))();
-  }catch(e){
-    console.warn('Could not extract diagram setup data:',e.message);
-    return null;
-  }
-}
-
-function openEditSession(i){
-  if(!isCoachPlan()&&!isClubPlan())return; // Coach, Club and Club Pro can edit
-  var s=userSessions[i];
-  if(!s){alert('[DEBUG] openEditSession('+i+') — session not found. userSessions.length='+userSessions.length);return;}
-  alert('[DEBUG] openEditSession('+i+') — session: '+s.title+' | session_id: '+s.session_id+' | plan: '+userPlan);
-  editSessionIndex=i;
-  // Normalize snake_case DB field to camelCase — same as viewSession() does.
-  // Without this, s.sessionId is undefined and template lookup falls to title-match only.
-  if(!s.sessionId && s.session_id) s.sessionId=s.session_id;
-  if(!s.isTeam && s.is_team) s.isTeam=s.is_team;
-  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){el.classList.remove('active');});
-  document.getElementById('editSessionScreen').classList.add('active');
-  document.getElementById('editSessionSub').textContent=(s.focus||s.category||'')+(s.time?(' · '+s.time):'');
-  document.getElementById('editTitleInput').value=s.title||'';
-
-  // Build editable text content
-  var bodyText='';
-  if(s.content){bodyText=s.content;}
-  else{
-    if(s.overview)bodyText+='OVERVIEW\n'+s.overview+'\n\n';
-    if(s.tip)bodyText+='COACHING TIP\n'+s.tip+'\n\n';
-    if(s.phases&&s.phases.length){
-      s.phases.forEach(function(ph){
-        bodyText+=(ph.name||'Phase').toUpperCase()+'\n';
-        if(ph.desc)bodyText+=ph.desc+'\n';
-        if(ph.points&&ph.points.length)bodyText+='Coaching points:\n'+ph.points.map(function(p){return '- '+p;}).join('\n')+'\n';
-        bodyText+='\n';
-      });
-    }
-  }
-  document.getElementById('editContentInput').value=bodyText;
-
-  // ── Resolve diagram elements ──────────────────────────────────
-  // Priority 1: this session already has its own saved custom elements (edited before).
-  // Priority 2: per-phase setup.elements saved directly on the session OR recoverable from the matching template.
-  // Priority 3: a single top-level diagram, recovered from the matching template's diagram() function source.
-  var phaseSelWrap=document.getElementById('editPhaseSelectorWrap');
-  var phaseSel=document.getElementById('editPhaseSelector');
-  editSessionPhases=[];
-
-  var allTemplatesForLookup=[].concat(
-    (typeof SOLO_SESSIONS!=='undefined'?SOLO_SESSIONS:[]),
-    (typeof TEAM_SESSIONS!=='undefined'?TEAM_SESSIONS:[])
-  );
-  var matchedTmpl=s.sessionId?allTemplatesForLookup.find(function(t){return t.id===s.sessionId;}):
-    allTemplatesForLookup.find(function(t){return t.title===s.title;});
-
-  if(s.elements && Array.isArray(s.elements) && s.elements.length){
-    editBuilderElements=JSON.parse(JSON.stringify(s.elements));
-    editOriginalDiagramSource='custom';
-  } else if(s.phases && s.phases.length && s.phases.some(function(p,i){
-      return (p.setup && p.setup.elements && p.setup.elements.length) ||
-             (matchedTmpl && matchedTmpl.phases && matchedTmpl.phases[i] && matchedTmpl.phases[i].setup && matchedTmpl.phases[i].setup.elements && matchedTmpl.phases[i].setup.elements.length);
-    })){
-    s.phases.forEach(function(ph,i){
-      var setup=(ph.setup && ph.setup.elements && ph.setup.elements.length)?ph.setup:
-        (matchedTmpl && matchedTmpl.phases && matchedTmpl.phases[i] ? matchedTmpl.phases[i].setup : null);
-      if(setup && setup.elements && setup.elements.length){
-        editSessionPhases.push({
-          label:ph.title||ph.phase||'Phase',
-          elements:rescaleElementsToBuilder(setup.elements,setup.vw,setup.vh)
-        });
-      }
-    });
-    editOriginalDiagramSource='template';
-  } else if(matchedTmpl && matchedTmpl.diagram && typeof matchedTmpl.diagram==='function'){
-    var topSetup=extractSetupFromDiagramFn(matchedTmpl.diagram);
-    if(topSetup && topSetup.elements && topSetup.elements.length){
-      editSessionPhases.push({
-        label:s.title||'Session Diagram',
-        elements:rescaleElementsToBuilder(topSetup.elements,topSetup.vw,topSetup.vh)
-      });
-    }
-    editOriginalDiagramSource='template';
-  } else {
-    editOriginalDiagramSource='none';
-    console.warn('[Edit Diagram] No recoverable diagram for session:',s.title,
-      '| This is expected for AI-generated and Fitness sessions.');
-  }
-
-  console.log('[Edit Diagram] Resolved',editSessionPhases.length,'diagram(s) for session:',s.title,
-    '| sessionId:',s.sessionId,'| matched template:',matchedTmpl?matchedTmpl.title:'none found',
-    '| source:',editOriginalDiagramSource);
-
-  if(editSessionPhases.length>1){
-    phaseSel.innerHTML=editSessionPhases.map(function(p,idx){return '<option value="'+idx+'">'+p.label+'</option>';}).join('');
-    phaseSelWrap.style.display='block';
-  } else {
-    phaseSelWrap.style.display='none';
-  }
-  editCurrentPhaseIdx=0;
-  editBuilderElements=editSessionPhases.length?JSON.parse(JSON.stringify(editSessionPhases[0].elements)):[];
-  editBuilderPlayerCount=editBuilderElements.filter(function(e){return e.type==='attacker'||e.type==='defender';}).length;
-
-  // Reset the listener-bound flag exactly once per fresh session open (not on every tab switch)
-  // so listeners attach cleanly for this session without stacking duplicates.
-  var editSvgEl=document.getElementById('editBuilderSvg');
-  if(editSvgEl) editSvgEl._editBuilderBound=false;
-
-  // Set the diagram hint text based on whether elements were recovered
-  var hintEl=document.getElementById('editBuilderHint');
-  if(hintEl){
-    if(editBuilderElements.length===0 && editOriginalDiagramSource==='none'){
-      hintEl.textContent='No diagram saved — use the tools above to build one from scratch';
-      hintEl.style.color='var(--muted)';
-    } else if(editBuilderElements.length===0){
-      // Diagnostic: show WHY it's blank so we can identify the failure
-      var diagMsg='[DIAG] sessionId:'+s.sessionId+' | phases:'+JSON.stringify((s.phases||[]).map(function(p){return{phase:p.phase,hasSetup:!!(p.setup&&p.setup.elements)};}))+' | phasesFound:'+editSessionPhases.length+' | source:'+editOriginalDiagramSource;
-      hintEl.textContent=diagMsg;
-      hintEl.style.color='#FFD600';
-      hintEl.style.fontSize='9px';
-      hintEl.style.wordBreak='break-all';
-    } else {
-      hintEl.textContent=editBuilderHintText();
-      hintEl.style.color='var(--accent)';
-    }
-  }
-
-  switchEditTab('text');
-  window.scrollTo(0,0);
-}
-
+// ── SWITCH EDIT PHASE ─────────────────────────────────────────────────────────
 function switchEditPhase(idx){
-  idx=parseInt(idx);
-  if(!editSessionPhases[idx])return;
-  // Persist current phase's edits before switching away from it
-  if(editSessionPhases[editCurrentPhaseIdx]) editSessionPhases[editCurrentPhaseIdx].elements=editBuilderElements;
-  editCurrentPhaseIdx=idx;
-  editBuilderElements=JSON.parse(JSON.stringify(editSessionPhases[idx].elements));
-  editBuilderRunStart=null;
-  editBuilderPlayerCount=editBuilderElements.filter(function(e){return e.type==='attacker'||e.type==='defender';}).length;
+  idx = parseInt(idx);
+  if(!editSessionPhases[idx]) return;
+  // Save current phase edits before switching
+  if(editSessionPhases[editCurrentPhaseIdx]){
+    editSessionPhases[editCurrentPhaseIdx].elements = editBuilderElements;
+  }
+  editCurrentPhaseIdx = idx;
+  editBuilderElements = JSON.parse(JSON.stringify(editSessionPhases[idx].elements));
+  editBuilderRunStart = null;
+  editBuilderPlayerCount = editBuilderElements.filter(function(e){
+    return e.type === 'attacker' || e.type === 'defender';
+  }).length;
   renderEditBuilderPitch();
 }
+
 
 function switchEditTab(tab){
   document.getElementById('editTabText').classList.toggle('active',tab==='text');
@@ -5087,6 +5114,10 @@ function renderEditBuilderPitch(){
     '<circle cx="100" cy="232" r="2" fill="'+lc+'"/>'+
     '<circle cx="2" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
     '<circle cx="198" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
+
+  // DEBUG: Always show element count so we can confirm render is running
+  html += '<text x="100" y="15" text-anchor="middle" fill="yellow" font-size="10" font-weight="bold">'+
+    'Elements: '+editBuilderElements.length+'</text>';
 
   if(editBuilderRunStart && ['pass','run','shot','pen'].includes(editBuilderTool)){
     var pcol=editBuilderTool==='pass'?'#00C2FF':editBuilderTool==='shot'?'#FF4D6A':editBuilderTool==='pen'?'#E8F0F8':'#FFD600';
