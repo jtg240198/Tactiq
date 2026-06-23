@@ -4830,6 +4830,8 @@ var editBuilderRunStart=null;
 var editOriginalDiagramSource='none';
 var editSessionPhases=[];
 var editCurrentPhaseIdx=0;
+var editDiagramVW=200; // native coordinate width for current diagram
+var editDiagramVH=280; // native coordinate height for current diagram
 
 // ── COORDINATE NORMALIZATION ─────────────────────────────────────────────────
 // Templates use two arrow coordinate formats:
@@ -4897,167 +4899,161 @@ function extractSetupFromDiagramFn(fn){
 function openEditSession(i){
   if(!isCoachPlan() && !isClubPlan()) return;
   var s = userSessions[i];
-  if(!s){ console.warn('[EditDiagram] openEditSession: no session at index', i); return; }
+  if(!s){ console.warn('[Diagram] openEditSession: no session at index',i); return; }
   editSessionIndex = i;
 
-  // Normalise snake_case DB fields to camelCase
+  // Normalise DB field names
   if(!s.sessionId && s.session_id) s.sessionId = s.session_id;
   if(s.isTeam === undefined && s.is_team !== undefined) s.isTeam = s.is_team;
 
-  // Navigate to edit screen
+  // Show edit screen
   document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){
     el.classList.remove('active');
   });
   document.getElementById('editSessionScreen').classList.add('active');
   document.getElementById('editSessionSub').textContent =
-    (s.focus || s.category || '') + (s.time ? (' · ' + s.time) : '');
-  document.getElementById('editTitleInput').value = s.title || '';
+    (s.focus||s.category||'') + (s.time?' · '+s.time:'');
+  document.getElementById('editTitleInput').value = s.title||'';
 
-  // ── Build editable text ──────────────────────────────────────────────────
-  var bodyText = '';
-  if(s.content){ bodyText = s.content; }
+  // Build text content
+  var bodyText='';
+  if(s.content){ bodyText=s.content; }
   else{
-    if(s.overview) bodyText += 'OVERVIEW\n' + s.overview + '\n\n';
-    if(s.tip) bodyText += 'COACHING TIP\n' + s.tip + '\n\n';
-    if(s.phases && s.phases.length){
+    if(s.overview) bodyText+='OVERVIEW\n'+s.overview+'\n\n';
+    if(s.tip) bodyText+='COACHING TIP\n'+s.tip+'\n\n';
+    if(s.phases&&s.phases.length){
       s.phases.forEach(function(ph){
-        bodyText += (ph.name || ph.phase || 'Phase').toUpperCase() + '\n';
-        if(ph.desc) bodyText += ph.desc + '\n';
-        if(ph.points && ph.points.length)
-          bodyText += 'Coaching points:\n' + ph.points.map(function(p){return '- '+p;}).join('\n') + '\n';
-        bodyText += '\n';
+        bodyText+=(ph.name||ph.phase||'Phase').toUpperCase()+'\n';
+        if(ph.desc) bodyText+=ph.desc+'\n';
+        if(ph.points&&ph.points.length)
+          bodyText+='Coaching points:\n'+ph.points.map(function(p){return '- '+p;}).join('\n')+'\n';
+        bodyText+='\n';
       });
     }
   }
   document.getElementById('editContentInput').value = bodyText;
 
-  // ── Resolve diagram elements ─────────────────────────────────────────────
+  // ── DIAGRAM LOADING ─────────────────────────────────────────────────────
   editSessionPhases = [];
   editCurrentPhaseIdx = 0;
   editBuilderElements = [];
   editOriginalDiagramSource = 'none';
+  editDiagramVW = 200;
+  editDiagramVH = 280;
 
-  // Find matching template (SOLO_SESSIONS + TEAM_SESSIONS arrays)
-  var allTemplates = [].concat(
-    typeof SOLO_SESSIONS !== 'undefined' ? SOLO_SESSIONS : [],
-    typeof TEAM_SESSIONS !== 'undefined' ? TEAM_SESSIONS : []
+  // Find matching template
+  var allT = [].concat(
+    typeof SOLO_SESSIONS!=='undefined'?SOLO_SESSIONS:[],
+    typeof TEAM_SESSIONS!=='undefined'?TEAM_SESSIONS:[]
   );
-  var matchedTmpl = s.sessionId
-    ? allTemplates.find(function(t){ return t.id === s.sessionId; })
-    : allTemplates.find(function(t){ return t.title === s.title; });
+  var tmpl = s.sessionId
+    ? allT.find(function(t){return t.id===s.sessionId;})
+    : allT.find(function(t){return t.title===s.title;});
 
-  // SOURCE 1: Previously edited custom elements saved in DB
+  // SOURCE A: Previously saved custom edit (highest priority)
   if(s.elements && Array.isArray(s.elements) && s.elements.length){
+    editDiagramVW = s.diagram_vw || 200;
+    editDiagramVH = s.diagram_vh || 280;
     editBuilderElements = JSON.parse(JSON.stringify(s.elements));
     editOriginalDiagramSource = 'custom';
-    console.log('[EditDiagram] SOURCE 1 (custom elements):', editBuilderElements.length);
+    console.log('[Diagram] SOURCE A (saved edits):',editBuilderElements.length,'elements at',editDiagramVW+'x'+editDiagramVH);
 
-  // SOURCE 2: Per-phase setup.elements from saved session phases (Solo sessions)
-  } else if(s.phases && s.phases.some(function(p){
-    return p.setup && p.setup.elements && p.setup.elements.length;
-  })){
-    s.phases.forEach(function(ph){
-      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
-        editSessionPhases.push({
-          label: ph.title || ph.phase || 'Phase',
-          elements: rescaleElementsToBuilder(ph.setup.elements, ph.setup.vw, ph.setup.vh)
-        });
-      }
-    });
-    editOriginalDiagramSource = 'template';
-    console.log('[EditDiagram] SOURCE 2 (saved phase setup):', editSessionPhases.length, 'phases');
-
-  // SOURCE 3: Per-phase setup.elements from matched template (Solo sessions via template lookup)
-  } else if(matchedTmpl && matchedTmpl.phases && matchedTmpl.phases.some(function(p){
-    return p.setup && p.setup.elements && p.setup.elements.length;
-  })){
-    matchedTmpl.phases.forEach(function(ph){
-      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
-        editSessionPhases.push({
-          label: ph.title || ph.phase || 'Phase',
-          elements: rescaleElementsToBuilder(ph.setup.elements, ph.setup.vw, ph.setup.vh)
-        });
-      }
-    });
-    editOriginalDiagramSource = 'template';
-    console.log('[EditDiagram] SOURCE 3 (template phase setup):', editSessionPhases.length, 'phases');
-
-  // SOURCE 4: Top-level diagram function (Team sessions — most common case)
-  } else if(matchedTmpl && typeof matchedTmpl.diagram === 'function'){
-    var setup = extractSetupFromDiagramFn(matchedTmpl.diagram);
+  // SOURCE B: Extract from template diagram function (Team sessions)
+  } else if(tmpl && typeof tmpl.diagram==='function'){
+    var setup = extractSetupFromDiagramFn(tmpl.diagram);
     if(setup && setup.elements && setup.elements.length){
-      editSessionPhases.push({
-        label: s.title || 'Diagram',
-        elements: rescaleElementsToBuilder(setup.elements, setup.vw, setup.vh)
+      editDiagramVW = setup.vw||200;
+      editDiagramVH = setup.vh||280;
+      var els = JSON.parse(JSON.stringify(setup.elements));
+      // Normalise arrow start point: some templates use x/y, others use x1/y1
+      var arrowTypes=['pass','run','shot','dribble','pen'];
+      els.forEach(function(e){
+        if(arrowTypes.indexOf(e.type)>=0){
+          if(!('x1' in e) && 'x' in e){ e.x1=e.x; e.y1=e.y; delete e.x; delete e.y; }
+        }
       });
+      editSessionPhases.push({label:s.title||'Diagram', elements:els, vw:editDiagramVW, vh:editDiagramVH});
+      editBuilderElements = JSON.parse(JSON.stringify(els));
       editOriginalDiagramSource = 'template';
-      console.log('[EditDiagram] SOURCE 4 (diagram fn):', setup.elements.length, 'elements');
+      console.log('[Diagram] SOURCE B (template fn):',editBuilderElements.length,'elements at',editDiagramVW+'x'+editDiagramVH);
+    }
+
+  // SOURCE C: Phase setup.elements from DB row (Solo sessions)
+  } else if(s.phases && s.phases.some(function(p){return p.setup&&p.setup.elements&&p.setup.elements.length;})){
+    s.phases.forEach(function(ph){
+      if(ph.setup&&ph.setup.elements&&ph.setup.elements.length){
+        var vw=ph.setup.vw||200, vh=ph.setup.vh||280;
+        var els=JSON.parse(JSON.stringify(ph.setup.elements));
+        var arrowTypes=['pass','run','shot','dribble','pen'];
+        els.forEach(function(e){
+          if(arrowTypes.indexOf(e.type)>=0){
+            if(!('x1' in e)&&'x' in e){e.x1=e.x;e.y1=e.y;delete e.x;delete e.y;}
+          }
+        });
+        editSessionPhases.push({label:ph.title||ph.phase||'Phase', elements:els, vw:vw, vh:vh});
+      }
+    });
+    if(editSessionPhases.length>0){
+      editDiagramVW=editSessionPhases[0].vw;
+      editDiagramVH=editSessionPhases[0].vh;
+      editBuilderElements=JSON.parse(JSON.stringify(editSessionPhases[0].elements));
+      editOriginalDiagramSource='template';
+      console.log('[Diagram] SOURCE C (phase setup):',editSessionPhases.length,'phases,',editBuilderElements.length,'elements');
+    }
+
+  // SOURCE D: Phase setup.elements from live template (Solo sessions via template)
+  } else if(tmpl&&tmpl.phases&&tmpl.phases.some(function(p){return p.setup&&p.setup.elements&&p.setup.elements.length;})){
+    tmpl.phases.forEach(function(ph){
+      if(ph.setup&&ph.setup.elements&&ph.setup.elements.length){
+        var vw=ph.setup.vw||200, vh=ph.setup.vh||280;
+        var els=JSON.parse(JSON.stringify(ph.setup.elements));
+        var arrowTypes=['pass','run','shot','dribble','pen'];
+        els.forEach(function(e){
+          if(arrowTypes.indexOf(e.type)>=0){
+            if(!('x1' in e)&&'x' in e){e.x1=e.x;e.y1=e.y;delete e.x;delete e.y;}
+          }
+        });
+        editSessionPhases.push({label:ph.title||ph.phase||'Phase', elements:els, vw:vw, vh:vh});
+      }
+    });
+    if(editSessionPhases.length>0){
+      editDiagramVW=editSessionPhases[0].vw;
+      editDiagramVH=editSessionPhases[0].vh;
+      editBuilderElements=JSON.parse(JSON.stringify(editSessionPhases[0].elements));
+      editOriginalDiagramSource='template';
+      console.log('[Diagram] SOURCE D (template phases):',editSessionPhases.length,'phases,',editBuilderElements.length,'elements');
     }
   }
 
-  // If phases found, use first phase as starting elements
-  if(editSessionPhases.length > 0 && editBuilderElements.length === 0){
-    editBuilderElements = JSON.parse(JSON.stringify(editSessionPhases[0].elements));
-  }
+  console.log('[Diagram] Final state: elements='+editBuilderElements.length+
+    ' vw='+editDiagramVW+' vh='+editDiagramVH+' source='+editOriginalDiagramSource);
 
-  editBuilderPlayerCount = editBuilderElements.filter(function(e){
-    return e.type === 'attacker' || e.type === 'defender';
+  editBuilderPlayerCount=editBuilderElements.filter(function(e){
+    return e.type==='attacker'||e.type==='defender';
   }).length;
 
-  console.log('[EditDiagram] Final: elements='+editBuilderElements.length+
-    ' phases='+editSessionPhases.length+' source='+editOriginalDiagramSource);
-
-  // ── Phase selector ───────────────────────────────────────────────────────
-  var phaseSelWrap = document.getElementById('editPhaseSelectorWrap');
-  var phaseSel = document.getElementById('editPhaseSelector');
-  if(phaseSelWrap && phaseSel){
-    if(editSessionPhases.length > 1){
-      phaseSel.innerHTML = editSessionPhases.map(function(p, idx){
-        return '<option value="'+idx+'">'+p.label+'</option>';
+  // Phase selector
+  var phaseSelWrap=document.getElementById('editPhaseSelectorWrap');
+  var phaseSel=document.getElementById('editPhaseSelector');
+  if(phaseSelWrap&&phaseSel){
+    if(editSessionPhases.length>1){
+      phaseSel.innerHTML=editSessionPhases.map(function(p,i){
+        return '<option value="'+i+'">'+p.label+'</option>';
       }).join('');
-      phaseSelWrap.style.display = 'block';
+      phaseSelWrap.style.display='block';
     } else {
-      phaseSelWrap.style.display = 'none';
+      phaseSelWrap.style.display='none';
     }
   }
 
-  // Reset SVG listener flag so fresh listeners attach on first render
-  var editSvgEl = document.getElementById('editBuilderSvg');
-  if(editSvgEl) editSvgEl._editBuilderBound = false;
+  var editSvgEl=document.getElementById('editBuilderSvg');
+  if(editSvgEl) editSvgEl._editBuilderBound=false;
 
   switchEditTab('text');
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
 }
 
-// ── OPEN EDIT SESSION FROM CURRENT SESSION ────────────────────────────────────
-// Called from the Edit button on the session result screen.
-// Finds the session in userSessions by id (set by saveSession after DB insert).
-function openEditCurrentSession(){
-  if(!currentSession){
-    console.warn('[EditDiagram] openEditCurrentSession: no currentSession');
-    return;
-  }
-  if(!currentSession.id){
-    console.warn('[EditDiagram] openEditCurrentSession: currentSession has no id — was saveSession awaited?');
-    // Fallback: find by sessionId/title since id may not be set
-    var idx = userSessions.findIndex(function(s){
-      return s.session_id === currentSession.sessionId || s.title === currentSession.title;
-    });
-    if(idx >= 0){ openEditSession(idx); return; }
-    console.warn('[EditDiagram] openEditCurrentSession: fallback also failed');
-    return;
-  }
-  var idx = userSessions.findIndex(function(s){ return s.id === currentSession.id; });
-  if(idx < 0){
-    console.warn('[EditDiagram] openEditCurrentSession: id not found in userSessions');
-    // Fallback: index 0 since saveSession does unshift(data[0])
-    if(userSessions.length > 0){ openEditSession(0); return; }
-    return;
-  }
-  openEditSession(idx);
-}
 
-// ── SWITCH EDIT PHASE ─────────────────────────────────────────────────────────
 function switchEditPhase(idx){
   idx = parseInt(idx);
   if(!editSessionPhases[idx]) return;
@@ -5066,7 +5062,10 @@ function switchEditPhase(idx){
     editSessionPhases[editCurrentPhaseIdx].elements = editBuilderElements;
   }
   editCurrentPhaseIdx = idx;
-  editBuilderElements = JSON.parse(JSON.stringify(editSessionPhases[idx].elements));
+  var phase = editSessionPhases[idx];
+  editBuilderElements = JSON.parse(JSON.stringify(phase.elements));
+  editDiagramVW = phase.vw || 200;
+  editDiagramVH = phase.vh || 280;
   editBuilderRunStart = null;
   editBuilderPlayerCount = editBuilderElements.filter(function(e){
     return e.type === 'attacker' || e.type === 'defender';
@@ -5109,18 +5108,22 @@ function editBuilderHintText(){
 function renderEditBuilderPitch(){
   var svg=document.getElementById('editBuilderSvg');
   var dbg=document.getElementById('editDebugInfo');
-  if(dbg) dbg.textContent='RENDER called: elements='+editBuilderElements.length+' svg='+(svg?'OK':'MISSING');
+  if(dbg) dbg.textContent='RENDER: elements='+editBuilderElements.length+' vw='+editDiagramVW+' vh='+editDiagramVH;
   if(!svg)return;
+  // Update viewBox to match native coordinate space of the diagram
+  svg.setAttribute('viewBox','0 0 '+editDiagramVW+' '+editDiagramVH);
+  var vw=editDiagramVW, vh=editDiagramVH;
   var lc='rgba(255,255,255,0.6)';
-  var html='<rect width="200" height="280" fill="#2d7a3a"/>'+
-    '<rect x="0" y="0" width="200" height="280" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
-    '<line x1="0" y1="2" x2="200" y2="2" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="35" y="212" width="130" height="68" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
-    '<rect x="65" y="248" width="70" height="32" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="80" y="272" width="40" height="8" fill="rgba(40,55,70,0.85)" stroke="'+lc+'" stroke-width="1"/>'+
-    '<circle cx="100" cy="232" r="2" fill="'+lc+'"/>'+
-    '<circle cx="2" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<circle cx="198" cy="278" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
+  // Pitch background scaled to native coordinate space
+  var html='<rect width="'+vw+'" height="'+vh+'" fill="#2d7a3a"/>'+
+    '<rect x="0" y="0" width="'+vw+'" height="'+vh+'" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
+    '<line x1="0" y1="2" x2="'+vw+'" y2="2" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<rect x="'+(vw*0.175)+'" y="'+(vh*0.757)+'" width="'+(vw*0.65)+'" height="'+(vh*0.243)+'" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
+    '<rect x="'+(vw*0.325)+'" y="'+(vh*0.886)+'" width="'+(vw*0.35)+'" height="'+(vh*0.114)+'" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<rect x="'+(vw*0.4)+'" y="'+(vh*0.971)+'" width="'+(vw*0.2)+'" height="'+(vh*0.029)+'" fill="rgba(40,55,70,0.85)" stroke="'+lc+'" stroke-width="1"/>'+
+    '<circle cx="'+(vw*0.5)+'" cy="'+(vh*0.829)+'" r="2" fill="'+lc+'"/>'+
+    '<circle cx="2" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
+    '<circle cx="'+(vw-2)+'" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
 
   if(editBuilderRunStart && ['pass','run','shot','pen'].includes(editBuilderTool)){
     var pcol=editBuilderTool==='pass'?'#00C2FF':editBuilderTool==='shot'?'#FF4D6A':editBuilderTool==='pen'?'#E8F0F8':'#FFD600';
@@ -5175,7 +5178,7 @@ function renderEditBuilderPitch(){
   });
 
   svg.innerHTML=html;
-  if(dbg) dbg.textContent='RENDER done: elements='+editBuilderElements.length+' html_len='+html.length;
+  if(dbg) dbg.textContent='DONE: '+editBuilderElements.length+' elements, vw='+editDiagramVW+' vh='+editDiagramVH+' html='+html.length+'bytes';
   if(!svg._editBuilderBound){
     svg._editBuilderBound=true;
     var dragIdx=-1, dragMoved=false, downPt=null;
@@ -5341,6 +5344,8 @@ async function saveEditedSession(){
     overview:newContent,
     edited:true,
     elements:savedElements,
+    diagram_vw:editDiagramVW,
+    diagram_vh:editDiagramVH,
     updated_at:new Date().toISOString()
   };
   try{
