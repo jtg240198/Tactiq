@@ -5104,8 +5104,8 @@ function editBuilderHintText(){
 
 function renderEditBuilderPitch(){
   var svg=document.getElementById('editBuilderSvg');
-  var dbgHint=document.getElementById('editBuilderHint');
-  if(dbgHint) dbgHint.textContent='[RENDER] elements:'+editBuilderElements.length+' svg:'+(svg?'found':'MISSING');
+  var dbg=document.getElementById('editDebugInfo');
+  if(dbg) dbg.textContent='RENDER called: elements='+editBuilderElements.length+' svg='+(svg?'OK':'MISSING');
   if(!svg)return;
   var lc='rgba(255,255,255,0.6)';
   var html='<rect width="200" height="280" fill="#2d7a3a"/>'+
@@ -5171,6 +5171,7 @@ function renderEditBuilderPitch(){
   });
 
   svg.innerHTML=html;
+  if(dbg) dbg.textContent='RENDER done: elements='+editBuilderElements.length+' html_len='+html.length;
   if(!svg._editBuilderBound){
     svg._editBuilderBound=true;
     var dragIdx=-1, dragMoved=false, downPt=null;
@@ -6352,6 +6353,7 @@ document.addEventListener('DOMContentLoaded',function(){
         <button class="sp-tool-btn" id="editToolErase" onclick="setEditTool('erase')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">✕</span>Erase</button>
       </div>
       <div id="editBuilderHint" style="font-size:11px;color:var(--accent);text-align:center;margin-bottom:6px;min-height:16px">Tap pitch to place attacker</div>
+      <div id="editDebugInfo" style="font-size:9px;color:#FFD600;text-align:center;margin-bottom:4px;word-break:break-all"></div>
       <div class="sp-builder-pitch" id="editBuilderPitch">
         <svg id="editBuilderSvg" viewBox="0 0 200 280" style="width:100%;touch-action:none;cursor:crosshair;pointer-events:all;display:block"></svg>
       </div>
