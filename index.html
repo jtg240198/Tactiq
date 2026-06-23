@@ -4000,7 +4000,14 @@ async function saveSession(session){
     is_team:session.isTeam||false,
     created_at:session.created_at
   }]).select();
-  if(!error&&data){userSessions.unshift(data[0]);monthSessions++;}
+  if(!error&&data){
+    userSessions.unshift(data[0]);
+    monthSessions++;
+    // Write DB-assigned id back onto the session object so that
+    // openEditCurrentSession() can find it in userSessions by id.
+    // Without this, currentSession.id is undefined and Edit Diagram fails.
+    if(session) session.id=data[0].id;
+  }
   document.getElementById('statTotal').textContent=userSessions.length;
 }
 
