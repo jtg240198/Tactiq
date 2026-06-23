@@ -5081,10 +5081,14 @@ function switchEditTab(tab){
   document.getElementById('editTextPane').style.display=tab==='text'?'block':'none';
   document.getElementById('editDiagramPane').style.display=tab==='diagram'?'block':'none';
   if(tab==='diagram'){
-    // Do NOT reset _editBuilderBound here — that would re-attach a duplicate set of
-    // listeners every time the user switches tabs, causing every tap/drag to fire twice.
-    // The flag is reset once per fresh session open instead, in openEditSession().
-    renderEditBuilderPitch();
+    try{
+      renderEditBuilderPitch();
+    }catch(err){
+      var dbg=document.getElementById('editDebugInfo');
+      if(dbg) dbg.textContent='ERROR: '+err.message+' | '+err.stack.split('\n')[0];
+      var hint=document.getElementById('editBuilderHint');
+      if(hint) hint.textContent='JS ERROR: '+err.message;
+    }
   }
 }
 
