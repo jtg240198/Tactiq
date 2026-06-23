@@ -4839,14 +4839,28 @@ function rescaleElementsToBuilder(elements,vw,vh){
   // Builder canvas is fixed 200x280 portrait. Template diagrams use their own vw/vh.
   // Rescale every coordinate proportionally so positions land correctly on the builder pitch.
   var sx=200/(vw||200), sy=280/(vh||280);
+  var arrowTypes=['pass','run','shot','dribble','pen'];
   return (elements||[]).map(function(e){
     var ne={type:e.type};
-    if('x' in e) ne.x=Math.round(e.x*sx);
-    if('y' in e) ne.y=Math.round(e.y*sy);
-    if('x1' in e) ne.x1=Math.round(e.x1*sx);
-    if('y1' in e) ne.y1=Math.round(e.y1*sy);
-    if('x2' in e) ne.x2=Math.round(e.x2*sx);
-    if('y2' in e) ne.y2=Math.round(e.y2*sy);
+    // TEAM_SESSIONS uses {x,y,x2,y2} for arrow start/end.
+    // SESSION_SETUPS uses {x1,y1,x2,y2}.
+    // Renderer always reads x1/y1. Normalize x/y → x1/y1 for arrow types.
+    if(arrowTypes.indexOf(e.type)>=0){
+      // Start point: prefer x1/y1, fall back to x/y
+      var sx1='x1' in e ? e.x1 : ('x' in e ? e.x : 0);
+      var sy1='y1' in e ? e.y1 : ('y' in e ? e.y : 0);
+      ne.x1=Math.round(sx1*sx);
+      ne.y1=Math.round(sy1*sy);
+      if('x2' in e) ne.x2=Math.round(e.x2*sx);
+      if('y2' in e) ne.y2=Math.round(e.y2*sy);
+    } else {
+      if('x' in e) ne.x=Math.round(e.x*sx);
+      if('y' in e) ne.y=Math.round(e.y*sy);
+      if('x1' in e) ne.x1=Math.round(e.x1*sx);
+      if('y1' in e) ne.y1=Math.round(e.y1*sy);
+      if('x2' in e) ne.x2=Math.round(e.x2*sx);
+      if('y2' in e) ne.y2=Math.round(e.y2*sy);
+    }
     if('w' in e) ne.w=Math.round(e.w*sx);
     if('h' in e) ne.h=Math.round(e.h*sy);
     if('label' in e) ne.label=e.label;
@@ -4857,6 +4871,7 @@ function rescaleElementsToBuilder(elements,vw,vh){
     if('color' in e) ne.color=e.color;
     if('anchor' in e) ne.anchor=e.anchor;
     if('size' in e) ne.size=e.size;
+    if('step' in e) ne.step=e.step;
     return ne;
   });
 }
@@ -4931,31 +4946,9 @@ function openEditSession(i){
   var matchedTmpl=s.sessionId?allTemplatesForLookup.find(function(t){return t.id===s.sessionId;}):
     allTemplatesForLookup.find(function(t){return t.title===s.title;});
 
-  // Priority 0: SESSION_SETUPS is the authoritative phase+diagram source.
-  // buildSession uses pickSession (TEAM_SESSIONS/SOLO_SESSIONS) to build sessions,
-  // but renderSessionContent uses SESSION_SETUPS for diagram display.
-  // Both use the same session IDs (t1, t4, s1 etc) so SESSION_SETUPS[sessionId]
-  // gives us the full phases with setup.elements — the real diagram data.
-  var sessionSetupData=null;
-  if(s.sessionId && typeof SESSION_SETUPS!=='undefined' && SESSION_SETUPS[s.sessionId]){
-    sessionSetupData=SESSION_SETUPS[s.sessionId];
-  }
-
   if(s.elements && Array.isArray(s.elements) && s.elements.length){
     editBuilderElements=JSON.parse(JSON.stringify(s.elements));
     editOriginalDiagramSource='custom';
-  } else if(sessionSetupData && sessionSetupData.phases && sessionSetupData.phases.some(function(p){
-      return p.setup && p.setup.elements && p.setup.elements.length;
-    })){
-    sessionSetupData.phases.forEach(function(ph){
-      if(ph.setup && ph.setup.elements && ph.setup.elements.length){
-        editSessionPhases.push({
-          label:ph.title||ph.phase||'Phase',
-          elements:rescaleElementsToBuilder(ph.setup.elements,ph.setup.vw,ph.setup.vh)
-        });
-      }
-    });
-    editOriginalDiagramSource='template';
   } else if(s.phases && s.phases.length && s.phases.some(function(p,i){
       return (p.setup && p.setup.elements && p.setup.elements.length) ||
              (matchedTmpl && matchedTmpl.phases && matchedTmpl.phases[i] && matchedTmpl.phases[i].setup && matchedTmpl.phases[i].setup.elements && matchedTmpl.phases[i].setup.elements.length);
