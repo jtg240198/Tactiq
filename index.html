@@ -4833,9 +4833,15 @@ var editBuilderRunStart=null;
 var editOriginalDiagramSource='template'; // 'template' or 'custom'
 
 function openEditCurrentSession(){
-  if(!currentSession||!currentSession.id)return;
+  if(!currentSession||!currentSession.id){
+    alert('[DEBUG] BLOCKED: currentSession.id='+( currentSession?currentSession.id:'no session'));
+    return;
+  }
   var idx=userSessions.findIndex(function(s){return s.id===currentSession.id;});
-  if(idx<0)return;
+  if(idx<0){
+    alert('[DEBUG] NOT FOUND: id='+currentSession.id+' userSessions='+userSessions.length);
+    return;
+  }
   openEditSession(idx);
 }
 
@@ -4910,7 +4916,9 @@ function extractSetupFromDiagramFn(fn){
 
 function openEditSession(i){
   if(!isCoachPlan()&&!isClubPlan())return; // Coach, Club and Club Pro can edit
-  var s=userSessions[i];if(!s)return;
+  var s=userSessions[i];
+  if(!s){alert('[DEBUG] openEditSession('+i+') — session not found. userSessions.length='+userSessions.length);return;}
+  alert('[DEBUG] openEditSession('+i+') — session: '+s.title+' | session_id: '+s.session_id+' | plan: '+userPlan);
   editSessionIndex=i;
   // Normalize snake_case DB field to camelCase — same as viewSession() does.
   // Without this, s.sessionId is undefined and template lookup falls to title-match only.
