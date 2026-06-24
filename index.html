@@ -5049,7 +5049,8 @@ function openEditSession(i){
   var editSvgEl=document.getElementById('editBuilderSvg');
   if(editSvgEl) editSvgEl._editBuilderBound=false;
 
-  switchEditTab('text');
+  // Open directly on diagram tab — renders immediately without requiring tab tap
+  switchEditTab('diagram');
   window.scrollTo(0,0);
 }
 
