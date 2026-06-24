@@ -1681,7 +1681,16 @@ function exportSetPiecePDF(){
   if(!currentSpDetail)return;var sp=currentSpDetail;
   var win=window.open('','_blank');if(!win){alert('Please allow popups for PDF export.');return;}
   var diagramSvg=document.getElementById('spDetailDiagram')?document.getElementById('spDetailDiagram').innerHTML:'';
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+sp.title+'</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;margin:0;padding:30px;max-width:700px}h1{font-size:22px;font-weight:900;text-transform:uppercase;color:#0a254a;margin-bottom:4px}.badge{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0066cc;margin-bottom:12px}.overview{font-size:13px;color:#444;line-height:1.6;margin-bottom:16px}.diagram{background:#1a3a2a;border-radius:8px;padding:8px;margin-bottom:16px}.section{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#888;margin:14px 0 6px}.phase-row{display:flex;gap:10px;margin-bottom:6px;align-items:flex-start}.phase-num{width:20px;height:20px;border-radius:50%;background:#0066cc;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}.phase-text{font-size:12px;color:#333;line-height:1.5}.point{font-size:12px;color:#333;padding-left:12px;position:relative;margin-bottom:3px;line-height:1.5}.point::before{content:"\\203A";position:absolute;left:0;color:#0066cc}.footer{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#888;display:flex;justify-content:space-between}@media print{body{padding:20px}}</style></head><body>'+
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+sp.title+'</title><style>body{font-family:Arial,sans-serif;background:#fff;color:#111;margin:0;padding:30px;max-width:700px}h1{font-size:22px;font-weight:900;text-transform:uppercase;color:#0a254a;margin-bottom:4px}.badge{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0066cc;margin-bottom:12px}.overview{font-size:13px;color:#444;line-height:1.6;margin-bottom:16px}.diagram{background:#1a3a2a;border-radius:8px;padding:8px;margin-bottom:16px}.section{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#888;margin:14px 0 6px}.phase-row{display:flex;gap:10px;margin-bottom:6px;align-items:flex-start}.phase-num{width:20px;height:20px;border-radius:50%;background:#0066cc;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}.phase-text{font-size:12px;color:#333;line-height:1.5}.point{font-size:12px;color:#333;padding-left:12px;position:relative;margin-bottom:3px;line-height:1.5}.point::before{content:"\\203A";position:absolute;left:0;color:#0066cc}.footer{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#888;display:flex;justify-content:space-between}@media print{body{padding:20px}}
+/* ── Animation Controls ─────────────────────────── */
+.anim-controls{margin-top:8px;background:rgba(0,0,0,0.25);border-radius:8px;padding:8px 10px;}
+.anim-btns{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.anim-btn{background:#0F2540;border:1px solid rgba(0,194,255,0.3);color:#00C2FF;font-size:12px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;touch-action:manipulation;}
+.anim-btn.anim-play.playing{background:rgba(0,194,255,0.15);border-color:#00C2FF;}
+.anim-speed{background:#0F2540;border:1px solid rgba(255,255,255,0.12);color:#c8d8e8;font-size:12px;padding:5px 8px;border-radius:6px;cursor:pointer;margin-left:auto;}
+.anim-progress-wrap{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.anim-progress-bar{height:100%;background:#00C2FF;width:0%;transition:width 0.05s linear;border-radius:2px;}
+</style></head><body>'+
     '<div class="badge">'+sp.badge+'</div><h1>'+sp.title+'</h1><div class="overview">'+sp.overview+'</div>'+
     '<div class="diagram">'+diagramSvg+'</div>'+
     '<div class="section">Trigger</div><div class="point">'+sp.trigger+'</div>'+
@@ -4819,6 +4828,55 @@ async
  // keyed by phaseIdx: {raf, playing, step, t0, stepStart, steps, svgEl, origHtml, elements, vw, vh}
 
 // ── PUBLIC API ─────────────────────────────────────────────────────────────
+var _animState = {};
+var _animSpeed = 1.0;
+
+function buildAnimControls(phase, pTmpl, phaseIdx){
+  var setup = pTmpl && pTmpl.setup && pTmpl.setup.elements ? pTmpl.setup : null;
+  if(!setup) return '';
+  if(!(setup.elements||[]).some(function(e){return !!e.step;})) return '';
+  var data = {elements:setup.elements,vw:setup.vw||220,vh:setup.vh||180};
+  var encoded;
+  try{ encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data)))); }
+  catch(e){ return ''; }
+  var cid = 'animCtrl_'+phaseIdx;
+  setTimeout(function(){
+    var el=document.getElementById(cid); if(el) el.setAttribute('data-anim',encoded);
+  },0);
+  return '<div id="'+cid+'" class="anim-controls">'+
+    '<div class="anim-btns">'+
+    '<button class="anim-btn anim-play" id="animPlayBtn_'+phaseIdx+'" onclick="_animBtnClick('+phaseIdx+',this)">&#9654; Play</button>'+
+    '<button class="anim-btn" onclick="_animRestartBtn('+phaseIdx+')">&#8635; Restart</button>'+
+    '<select class="anim-speed" onchange="animSetSpeed('+phaseIdx+',parseFloat(this.value))">'+
+    '<option value="0.5">0.5&#215;</option>'+
+    '<option value="1" selected>1&#215;</option>'+
+    '<option value="1.5">1.5&#215;</option>'+
+    '<option value="2">2&#215;</option>'+
+    '</select></div>'+
+    '<div class="anim-progress-wrap"><div class="anim-progress-bar" id="animProgress_'+phaseIdx+'"></div></div>'+
+    '</div>';
+}
+
+function _animBtnClick(phaseIdx, btn){
+  var el = document.getElementById('animCtrl_'+phaseIdx);
+  var encoded = el ? el.getAttribute('data-anim') : null;
+  if(!encoded) return;
+  animPlay(phaseIdx, encoded, btn);
+}
+
+function _animRestartBtn(phaseIdx){
+  var el = document.getElementById('animCtrl_'+phaseIdx);
+  var encoded = el ? el.getAttribute('data-anim') : null;
+  if(!encoded) return;
+  animRestart(phaseIdx, encoded);
+}
+
+function animSetSpeed(phaseIdx, speed){
+  _animSpeed = speed;
+  var state = _animState[phaseIdx];
+  if(state) state.speed = speed;
+}
+
 function animPlay(phaseIdx, encoded, btn){
   var state = _animState[phaseIdx];
   if(state && state.playing){
@@ -4910,7 +4968,8 @@ function _animStart(phaseIdx, encoded, btn){
     origSvgHtml: origSvgHtml,
     elements: elements,
     vw: vw,
-    vh: vh
+    vh: vh,
+    speed: _animSpeed
   };
 
   if(btn){ btn.textContent = '⏸ Pause'; btn.classList.add('playing'); }
@@ -5114,30 +5173,25 @@ function _arrowHead(x1,y1,x2,y2,col,sw){
 function _animTick(phaseIdx, ts){
   var state = _animState[phaseIdx];
   if(!state || !state.playing) return;
-
   if(state.stepStart === null) state.stepStart = ts;
-  var elapsed = ts - state.stepStart;
+  var speed = state.speed || _animSpeed || 1.0;
+  var elapsed = (ts - state.stepStart) * speed;
   var step = state.steps[state.stepIdx];
   if(!step){ _animFinish(phaseIdx); return; }
-
-  var t = Math.min(elapsed / step.dur, 1); // 0→1 progress through this step
+  var t = Math.min(elapsed / step.dur, 1);
   var ease = _easeInOut(t);
-
-  // Execute all actions for this step at current t
   step.actions.forEach(function(action){
     _applyAction(action, ease, state.svgEl, state.elements);
   });
-
+  // Progress bar
+  var pct = ((state.stepIdx + t) / state.steps.length) * 100;
+  var pb = document.getElementById('animProgress_'+phaseIdx);
+  if(pb) pb.style.width = pct+'%';
   if(t >= 1){
-    // Step complete — advance to next
     state.stepIdx++;
     state.stepStart = null;
-    if(state.stepIdx >= state.steps.length){
-      _animFinish(phaseIdx);
-      return;
-    }
+    if(state.stepIdx >= state.steps.length){ _animFinish(phaseIdx); return; }
   }
-
   state.raf = requestAnimationFrame(function(ts2){ _animTick(phaseIdx, ts2); });
 }
 
@@ -5184,7 +5238,8 @@ function _animFinish(phaseIdx){
   state.playing = false;
   if(state.raf){ cancelAnimationFrame(state.raf); state.raf = null; }
   var btn = document.getElementById('animPlayBtn_'+phaseIdx);
-  if(btn){ btn.textContent = '▶ Play'; btn.classList.remove('playing'); }
+  if(btn){ btn.textContent = '&#9654; Play'; btn.classList.remove('playing'); }
+  var pb=document.getElementById('animProgress_'+phaseIdx); if(pb) pb.style.width='100%';
   // Show all arrows fully at end state — restore full visibility
   if(state.svgEl){
     state.svgEl.querySelectorAll('[id$="_line"]').forEach(function(l){
