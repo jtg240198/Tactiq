@@ -2318,12 +2318,12 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
     const boxEdge = Math.round(vh*0.32);
     // Ball at byline
     elements.push({type:'ball',x:byX+8,y:byY-8});
-    // Near-post cross — no step circles (confuse with players)
-    elements.push({type:'pass',x1:byX,y1:byY,x2:nearPost,y2:goalY+5});
+    // Near-post cross — step drives animation sequence (no visible number)
+    elements.push({type:'pass',x1:byX,y1:byY,x2:nearPost,y2:goalY+5,step:1});
     // Far-post cross
-    elements.push({type:'pass',x1:byX+4,y1:byY,x2:farPost+10,y2:goalY+8});
+    elements.push({type:'pass',x1:byX+4,y1:byY,x2:farPost+10,y2:goalY+8,step:2});
     // Pull-back dribble
-    elements.push({type:'dribble',x1:byX+6,y1:byY,x2:Math.round(vw*0.35),y2:boxEdge});
+    elements.push({type:'dribble',x1:byX+6,y1:byY,x2:Math.round(vw*0.35),y2:boxEdge,step:3});
     // Label the three delivery types instead of step circles
     elements.push({type:'label',x:byX+50,y:byY+16,text:'1=Near  2=Far  3=Pull-back',size:6.5,color:'rgba(0,194,255,0.6)'});
     // Runners into box — only for team sessions
@@ -2346,10 +2346,10 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
     // GK passes to nearest attacker — no step numbers (they look like extra players)
     if(attackerEls.length > 0){
       const near = attackerEls[Math.floor(attackerEls.length/2)];
-      elements.push({type:'pass',x1:gk.x,y1:gk.y,x2:near.x,y2:near.y});
+      elements.push({type:'pass',x1:gk.x,y1:gk.y,x2:near.x,y2:near.y,step:1});
       if(attackerEls.length > 1){
         const wide = attackerEls[0];
-        elements.push({type:'pass',x1:near.x,y1:near.y,x2:wide.x,y2:wide.y});
+        elements.push({type:'pass',x1:near.x,y1:near.y,x2:wide.x,y2:wide.y,step:2});
       }
     }
     return elements;
@@ -2359,32 +2359,34 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
   // Ball offset from player — not on top of player circle
   elements.push({type:'ball',x:a0.x-14,y:a0.y-14});
 
-  // Pass chain — NO step circles (they look like extra players)
-  // Instead use subtle arrows only
+  // Action sequence — step numbers drive animation playback order.
+  // stepCircle() returns '' so these never show as visible numbers.
+  var seq = 1;
+
+  // Pass chain (executes first, in order)
   if(parsed.hasPass && attackerEls.length >= 2){
     for(let i=0;i<Math.min(attackerEls.length-1,2);i++){
       elements.push({type:'pass',
         x1:attackerEls[i].x, y1:attackerEls[i].y,
-        x2:attackerEls[i+1].x, y2:attackerEls[i+1].y});
-        // No step: property intentionally omitted
+        x2:attackerEls[i+1].x, y2:attackerEls[i+1].y, step:seq++});
     }
   }
 
   // Dribble for solo
   if(parsed.hasDribble && parsed.attackers === 1){
-    elements.push({type:'dribble',x1:a0.x,y1:a0.y-12,x2:a0.x,y2:Math.round(vh*0.25)});
+    elements.push({type:'dribble',x1:a0.x,y1:a0.y-12,x2:a0.x,y2:Math.round(vh*0.25),step:seq++});
   }
 
-  // Run arrow — only one, no step number
+  // Supporting run (happens alongside/after passes)
   if(parsed.hasRun && attackerEls.length >= 2){
     const a1 = attackerEls[Math.min(1,attackerEls.length-1)];
-    elements.push({type:'run',x1:a1.x,y1:a1.y,x2:a1.x,y2:Math.round(vh*0.2)});
+    elements.push({type:'run',x1:a1.x,y1:a1.y,x2:a1.x,y2:Math.round(vh*0.2),step:seq++});
   }
 
-  // Shoot
+  // Shot — always the final action in the sequence
   if(parsed.hasShoot){
     const last = attackerEls[attackerEls.length-1];
-    elements.push({type:'pass',x1:last.x,y1:last.y,x2:Math.round(vw/2),y2:20});
+    elements.push({type:'shot',x1:last.x,y1:last.y,x2:Math.round(vw/2),y2:20,step:seq++});
   }
 
   return elements;
@@ -2464,6 +2466,23 @@ function buildAndValidateDiagram(desc, phaseName, isTeam, titleOverride) {
     _validation: validation,
     _parsed: parsed,
   });
+}
+
+// Returns the raw setup object (elements/vw/vh) for a generated diagram.
+// Same build logic as buildAndValidateDiagram but without rendering to SVG —
+// used by the animation engine to get stepped elements reliably.
+function buildSetupObject(desc, phaseName, isTeam){
+  try{
+    const parsed = parsePractice(desc, phaseName);
+    let vw = 220, vh = 180;
+    if(parsed.pitchType === 'full'){ vw = 300; vh = 185; }
+    if(parsed.pitchType === 'half'){ vw = 280; vh = 200; }
+    const playerEls = layoutPlayers(parsed, vw, vh);
+    const equipEls  = layoutEquipment(parsed, vw, vh);
+    const actionEls = layoutActions(parsed, playerEls, vw, vh, isTeam);
+    return { pitchType:parsed.pitchType, vw:vw, vh:vh,
+             elements:[...equipEls, ...playerEls, ...actionEls] };
+  }catch(e){ return null; }
 }
 
 // ── STEP 6: PITCH + ELEMENT RENDERERS (kept from v2) ──────────
@@ -4851,14 +4870,9 @@ function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
     setup = pTmpl.setup;
   }
 
-  // Source 3: build from desc, capturing the setup object (same as diagram)
+  // Source 3: build the setup object directly from the phase description
   if(!setup && phase && phase.desc){
-    var captured = null;
-    var orig = window.renderSetupDiagram;
-    window.renderSetupDiagram = function(s){ captured = s; return ''; };
-    try{ buildAndValidateDiagram(phase.desc, phase.phase || '', !!isTeam); }catch(e){}
-    window.renderSetupDiagram = orig;
-    setup = captured;
+    setup = buildSetupObject(phase.desc, phase.phase || '', !!isTeam);
   }
 
   if(!setup || !setup.elements) return '';
