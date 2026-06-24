@@ -972,7 +972,6 @@ fbq('track','PageView');
     <button class="back-btn" onclick="showScreen('dashboardScreen')">← Back to Dashboard</button>
     <div id="sessionContent"></div>
     <button class="pdf-btn" id="pdfBtn" onclick="exportPDF()">📄 Export as PDF</button>
-    <button class="btn-ghost" id="sessionEditBtn" style="display:none" onclick="openEditCurrentSession()">✏️ Edit This Session</button>
     <button class="btn-ghost" onclick="tryStartSession()">Build Another Session</button>
   </div>
 </div>
@@ -2625,56 +2624,7 @@ function renderLegend(vw,vh,items){
   return s;
 }
 
-function renderEditedDiagramSVG(elements){
-  var lc='rgba(255,255,255,0.4)';
-  var html='<rect width="200" height="280" fill="#0d3320" rx="4"/>'+
-    '<rect x="0" y="0" width="200" height="280" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
-    '<line x1="0" y1="2" x2="200" y2="2" stroke="'+lc+'" stroke-width="0.6"/>'+
-    '<rect x="35" y="212" width="130" height="68" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="65" y="248" width="70" height="32" fill="none" stroke="'+lc+'" stroke-width="0.6"/>'+
-    '<rect x="80" y="272" width="40" height="8" fill="rgba(40,55,70,0.7)" stroke="'+lc+'" stroke-width="0.8"/>';
-  (elements||[]).forEach(function(el,idx){
-    if(el.type==='attacker'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#00C2FF" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">'+(el.label||'A')+'</text>';
-    } else if(el.type==='defender'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FF4D6A" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">'+(el.label||'D')+'</text>';
-    } else if(el.type==='neutral'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#F9A825" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">'+(el.label||'N')+'</text>';
-    } else if(el.type==='gk'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FFB300" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+3.5)+'" text-anchor="middle" fill="#000" font-size="6.5" font-weight="bold">GK</text>';
-    } else if(el.type==='ball'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="6" fill="#fff" stroke="#333" stroke-width="1"/><circle cx="'+el.x+'" cy="'+el.y+'" r="3" fill="#555"/>';
-    } else if(el.type==='cone'){
-      html+='<polygon points="'+el.x+','+(el.y-7)+' '+(el.x-5)+','+(el.y+4)+' '+(el.x+5)+','+(el.y+4)+'" fill="#FF8A3D" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
-    } else if(el.type==='pole'){
-      html+='<rect x="'+(el.x-2)+'" y="'+(el.y-12)+'" width="4" height="24" fill="#78909C" rx="2"/>'+
-        '<ellipse cx="'+el.x+'" cy="'+(el.y-12)+'" rx="4" ry="2.5" fill="#78909C"/>';
-    } else if(el.type==='goal'){
-      html+='<rect x="'+(el.x-18)+'" y="'+(el.y-10)+'" width="36" height="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.6)" stroke-width="2" rx="1"/>';
-    } else if(el.type==='mini_goal'){
-      html+='<rect x="'+(el.x-8)+'" y="'+(el.y-6)+'" width="16" height="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" rx="1"/>';
-    } else if(el.type==='area'){
-      html+='<rect x="'+el.x+'" y="'+el.y+'" width="'+(el.w||30)+'" height="'+(el.h||30)+'" fill="'+(el.fill||'rgba(0,194,255,0.04)')+'" stroke="'+(el.stroke||'rgba(0,194,255,0.3)')+'" stroke-width="1.5" stroke-dasharray="'+(el.dashed?'5,3':'none')+'" rx="2"/>';
-      if(el.label) html+='<text x="'+(el.x+(el.w||30)/2)+'" y="'+(el.y-4)+'" text-anchor="middle" fill="rgba(0,194,255,0.65)" font-size="7">'+el.label+'</text>';
-    } else if(el.type==='label'){
-      html+='<text x="'+el.x+'" y="'+el.y+'" text-anchor="'+(el.anchor||'middle')+'" fill="'+(el.color||'rgba(180,200,220,0.65)')+'" font-size="'+(el.size||8)+'">'+(el.text||el.label||'')+'</text>';
-    } else if(el.type==='pen'){
-      html+='<line x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+
-        '" stroke="#E8F0F8" stroke-width="2" stroke-linecap="round"/>';
-    } else if(el.type==='pass'||el.type==='run'||el.type==='shot'||el.type==='dribble'){
-      var col=el.type==='pass'?'#00C2FF':el.type==='shot'?'#FF4D6A':el.type==='dribble'?'#00E676':'#FFD600';
-      var dash=el.type==='run'?' stroke-dasharray="5,3"':'';
-      var mid='vdiag_'+idx;
-      html+='<defs><marker id="'+mid+'" markerWidth="7" markerHeight="7" refX="3" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="'+col+'"/></marker></defs>'+
-        '<line x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+'" stroke="'+col+'" stroke-width="'+(el.type==='shot'?2.2:1.8)+'"'+dash+' marker-end="url(#'+mid+')"/>';
-    }
-  });
-  return '<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" style="max-width:240px;height:auto;display:block;margin:0 auto;border-radius:8px">'+html+'</svg>';
-}
+
 
 function renderSetupDiagram(setup){
   const vw=setup.vw||220, vh=setup.vh||180;
@@ -3703,8 +3653,7 @@ function handleQuickGenerate(){
     showScreen('sessionScreen');
     // show PDF only for paid plans
     document.getElementById('pdfBtn').style.display=(userPlan!=='free')?'flex':'none';
-    var editBtn=document.getElementById('sessionEditBtn');
-    if(editBtn) editBtn.style.display=(isCoachPlan()||isClubPlan())?'block':'none';
+
   },1000);
 }
 
@@ -4106,8 +4055,7 @@ function viewSession(i){
   };
   renderSessionContent(currentSession);
   document.getElementById('pdfBtn').style.display=(userPlan!=='free')?'flex':'none';
-  var editBtn=document.getElementById('sessionEditBtn');
-  if(editBtn) editBtn.style.display=(isCoachPlan()||isClubPlan())?'block':'none';
+
   showScreen('sessionScreen');
 }
 
@@ -4638,12 +4586,7 @@ function viewHistorySession(i){
   closeBtn.style.cssText='background:#0F2540;border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;touch-action:manipulation;flex:1';
   closeBtn.onclick=function(){document.body.removeChild(overlay);};
   btnRow.appendChild(closeBtn);
-  if(isCoachPlan()||isClubPlan()){
-    var editBtn=document.createElement('button');editBtn.textContent='✏️ Edit Session';
-    editBtn.style.cssText='background:#00C2FF;border:none;color:#0A254A;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;touch-action:manipulation;flex:1';
-    editBtn.onclick=function(){document.body.removeChild(overlay);openEditSession(i);};
-    btnRow.appendChild(editBtn);
-  }
+  
   var h=document.createElement('h2');h.textContent=s.title||s.focus||'Session';h.style.cssText='font-size:18px;font-weight:800;color:#fff;margin:0 0 12px';
   var bd=document.createElement('div');bd.textContent=bodyText;bd.style.cssText='font-size:13px;line-height:1.7;color:#c8d8e8;white-space:pre-wrap';
   wrap.appendChild(btnRow);wrap.appendChild(h);wrap.appendChild(bd);overlay.appendChild(wrap);document.body.appendChild(overlay);
@@ -4822,50 +4765,15 @@ function renderFitnessRecentList(){
 }
 
 // ══ EDIT SESSION (text + diagram) ════════════════════════════════
-var editSessionIndex=-1;
-var editBuilderElements=[];
-var editBuilderPlayerCount=0;
-var editBuilderTool='attacker';
-var editBuilderRunStart=null;
-var editOriginalDiagramSource='none';
-var editSessionPhases=[];
-var editCurrentPhaseIdx=0;
-var editDiagramVW=200; // native coordinate width for current diagram
-var editDiagramVH=280; // native coordinate height for current diagram
+ // native coordinate width for current diagram
+ // native coordinate height for current diagram
 
 // ── COORDINATE NORMALIZATION ─────────────────────────────────────────────────
 // Templates use two arrow coordinate formats:
 //   TEAM_SESSIONS:    {type:'pass', x:140, y:158, x2:140, y2:88}   (x/y for start)
 //   SESSION_SETUPS:   {type:'run',  x1:60, y1:143, x2:35, y2:60}   (x1/y1 for start)
 // The renderer always reads x1/y1. This function normalises both to x1/y1.
-function rescaleElementsToBuilder(elements, vw, vh){
-  var sx = 200 / (vw || 200);
-  var sy = 280 / (vh || 280);
-  var arrowTypes = ['pass','run','shot','dribble','pen'];
-  return (elements || []).map(function(e){
-    var ne = {type: e.type};
-    if(arrowTypes.indexOf(e.type) >= 0){
-      // Normalise start point: prefer x1/y1, fall back to x/y
-      ne.x1 = Math.round(('x1' in e ? e.x1 : (e.x || 0)) * sx);
-      ne.y1 = Math.round(('y1' in e ? e.y1 : (e.y || 0)) * sy);
-      if('x2' in e) ne.x2 = Math.round(e.x2 * sx);
-      if('y2' in e) ne.y2 = Math.round(e.y2 * sy);
-    } else {
-      if('x'  in e) ne.x  = Math.round(e.x  * sx);
-      if('y'  in e) ne.y  = Math.round(e.y  * sy);
-      if('x1' in e) ne.x1 = Math.round(e.x1 * sx);
-      if('y1' in e) ne.y1 = Math.round(e.y1 * sy);
-      if('x2' in e) ne.x2 = Math.round(e.x2 * sx);
-      if('y2' in e) ne.y2 = Math.round(e.y2 * sy);
-      if('w'  in e) ne.w  = Math.round(e.w  * sx);
-      if('h'  in e) ne.h  = Math.round(e.h  * sy);
-    }
-    ['label','text','fill','stroke','dashed','color','anchor','size','step'].forEach(function(k){
-      if(k in e) ne[k] = e[k];
-    });
-    return ne;
-  });
-}
+
 
 // ── DIAGRAM EXTRACTION FROM FUNCTION SOURCE ──────────────────────────────────
 // TEAM_SESSIONS store diagrams as: diagram:()=>renderSetupDiagram({...})
@@ -4896,504 +4804,32 @@ function extractSetupFromDiagramFn(fn){
 // Entry point called with the index of the session in userSessions array.
 // Resolves diagram elements from every available source, populates
 // editBuilderElements, then shows the edit screen.
-function openEditSession(i){
-  if(!isCoachPlan()&&!isClubPlan()) return;
-  var s=userSessions[i];
-  if(!s) return;
-  editSessionIndex=i;
-
-  // Normalise DB snake_case to camelCase
-  if(!s.sessionId && s.session_id) s.sessionId=s.session_id;
-  if(s.isTeam===undefined && s.is_team!==undefined) s.isTeam=s.is_team;
-
-  // Show edit screen
-  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){el.classList.remove('active');});
-  document.getElementById('editSessionScreen').classList.add('active');
-  document.getElementById('editSessionSub').textContent=(s.focus||s.category||'')+(s.time?' · '+s.time:'');
-  document.getElementById('editTitleInput').value=s.title||'';
-
-  // Build text content
-  var bodyText='';
-  if(s.content){ bodyText=s.content; }
-  else {
-    if(s.overview) bodyText+='OVERVIEW\n'+s.overview+'\n\n';
-    if(s.tip) bodyText+='COACHING TIP\n'+s.tip+'\n\n';
-    if(s.phases&&s.phases.length){
-      s.phases.forEach(function(ph){
-        bodyText+=(ph.name||ph.phase||'Phase').toUpperCase()+'\n';
-        if(ph.desc) bodyText+=ph.desc+'\n';
-        if(ph.points&&ph.points.length)
-          bodyText+='Coaching points:\n'+ph.points.map(function(p){return '- '+p;}).join('\n')+'\n';
-        bodyText+='\n';
-      });
-    }
-  }
-  document.getElementById('editContentInput').value=bodyText;
-
-  // ── DIAGRAM LOADING ──────────────────────────────────────────────────────
-  editBuilderElements=[];
-  editBuilderPlayerCount=0;
-  editBuilderRunStart=null;
-  editSessionPhases=[];
-  editCurrentPhaseIdx=0;
-  editDiagramVW=200;
-  editDiagramVH=280;
-
-  function normaliseArrows(els){
-    // Some templates store arrow start as x/y, others as x1/y1. Normalise to x1/y1.
-    var arrowT=['pass','run','shot','dribble','pen'];
-    return els.map(function(e){
-      var n=Object.assign({},e);
-      if(arrowT.indexOf(n.type)>=0){
-        if(!('x1' in n) && 'x' in n){ n.x1=n.x; n.y1=n.y; delete n.x; delete n.y; }
-      }
-      return n;
-    });
-  }
-
-  // SOURCE 1: Previously saved custom edits (highest priority — user already edited this)
-  if(s.elements && Array.isArray(s.elements) && s.elements.length){
-    editDiagramVW=s.diagram_vw||200;
-    editDiagramVH=s.diagram_vh||280;
-    editBuilderElements=JSON.parse(JSON.stringify(s.elements));
-    console.log('[Diagram] SOURCE 1 custom:',editBuilderElements.length,'elements',editDiagramVW+'x'+editDiagramVH);
-
-  // SOURCE 2: Live template function (Team sessions — most common case)
-  } else {
-    var allT=[].concat(
-      typeof SOLO_SESSIONS!=='undefined'?SOLO_SESSIONS:[],
-      typeof TEAM_SESSIONS!=='undefined'?TEAM_SESSIONS:[]
-    );
-    var tmpl=s.sessionId
-      ? allT.find(function(t){return t.id===s.sessionId;})
-      : allT.find(function(t){return t.title===s.title;});
-
-    if(tmpl && typeof tmpl.diagram==='function'){
-      var setup=extractSetupFromDiagramFn(tmpl.diagram);
-      if(setup && setup.elements && setup.elements.length){
-        editDiagramVW=setup.vw||200;
-        editDiagramVH=setup.vh||280;
-        editBuilderElements=normaliseArrows(JSON.parse(JSON.stringify(setup.elements)));
-        console.log('[Diagram] SOURCE 2 template fn:',editBuilderElements.length,'elements',editDiagramVW+'x'+editDiagramVH);
-      }
-
-    // SOURCE 3: Phase setup.elements (Solo sessions)
-    } else if(tmpl && tmpl.phases){
-      tmpl.phases.forEach(function(ph){
-        if(ph.setup&&ph.setup.elements&&ph.setup.elements.length){
-          editSessionPhases.push({
-            label:ph.title||ph.phase||'Phase',
-            elements:normaliseArrows(JSON.parse(JSON.stringify(ph.setup.elements))),
-            vw:ph.setup.vw||200, vh:ph.setup.vh||280
-          });
-        }
-      });
-      if(editSessionPhases.length>0){
-        editDiagramVW=editSessionPhases[0].vw;
-        editDiagramVH=editSessionPhases[0].vh;
-        editBuilderElements=JSON.parse(JSON.stringify(editSessionPhases[0].elements));
-        console.log('[Diagram] SOURCE 3 template phases:',editSessionPhases.length,'phases,',editBuilderElements.length,'elements');
-      }
-
-    // SOURCE 4: Phase setup.elements from saved DB phases (Solo sessions without template match)
-    } else if(s.phases&&s.phases.some(function(p){return p.setup&&p.setup.elements&&p.setup.elements.length;})){
-      s.phases.forEach(function(ph){
-        if(ph.setup&&ph.setup.elements&&ph.setup.elements.length){
-          editSessionPhases.push({
-            label:ph.title||ph.phase||'Phase',
-            elements:normaliseArrows(JSON.parse(JSON.stringify(ph.setup.elements))),
-            vw:ph.setup.vw||200, vh:ph.setup.vh||280
-          });
-        }
-      });
-      if(editSessionPhases.length>0){
-        editDiagramVW=editSessionPhases[0].vw;
-        editDiagramVH=editSessionPhases[0].vh;
-        editBuilderElements=JSON.parse(JSON.stringify(editSessionPhases[0].elements));
-        console.log('[Diagram] SOURCE 4 saved phases:',editSessionPhases.length,'phases,',editBuilderElements.length,'elements');
-      }
-    } else {
-      console.log('[Diagram] No diagram source found — blank canvas. sessionId:',s.sessionId,'title:',s.title);
-    }
-  }
-
-  editBuilderPlayerCount=editBuilderElements.filter(function(e){return e.type==='attacker'||e.type==='defender';}).length;
-  console.log('[Diagram] Final: elements='+editBuilderElements.length+' vw='+editDiagramVW+' vh='+editDiagramVH);
-
-  // Update debug div if present
-  var dbg=document.getElementById('editDebugInfo');
-  if(dbg) dbg.textContent='Loaded: '+editBuilderElements.length+' elements ('+editDiagramVW+'x'+editDiagramVH+')';
-
-  // Phase selector
-  var phSel=document.getElementById('editPhaseSelectorWrap');
-  var phOpts=document.getElementById('editPhaseSelector');
-  if(phSel&&phOpts){
-    if(editSessionPhases.length>1){
-      phOpts.innerHTML=editSessionPhases.map(function(p,i){return '<option value="'+i+'">'+p.label+'</option>';}).join('');
-      phSel.style.display='block';
-    } else { phSel.style.display='none'; }
-  }
-
-  var svgEl=document.getElementById('editBuilderSvg');
-  if(svgEl) svgEl._editBuilderBound=false;
-
-  switchEditTab('diagram');
-  window.scrollTo(0,0);
-}
 
 
-function switchEditPhase(idx){
-  idx = parseInt(idx);
-  if(!editSessionPhases[idx]) return;
-  // Save current phase edits before switching
-  if(editSessionPhases[editCurrentPhaseIdx]){
-    editSessionPhases[editCurrentPhaseIdx].elements = editBuilderElements;
-  }
-  editCurrentPhaseIdx = idx;
-  var phase = editSessionPhases[idx];
-  editBuilderElements = JSON.parse(JSON.stringify(phase.elements));
-  editDiagramVW = phase.vw || 200;
-  editDiagramVH = phase.vh || 280;
-  editBuilderRunStart = null;
-  editBuilderPlayerCount = editBuilderElements.filter(function(e){
-    return e.type === 'attacker' || e.type === 'defender';
-  }).length;
-  renderEditBuilderPitch();
-}
 
 
-function switchEditTab(tab){
-  document.getElementById('editTabText').classList.toggle('active',tab==='text');
-  document.getElementById('editTabDiagram').classList.toggle('active',tab==='diagram');
-  document.getElementById('editTextPane').style.display=tab==='text'?'block':'none';
-  document.getElementById('editDiagramPane').style.display=tab==='diagram'?'block':'none';
-  if(tab==='diagram'){
-    try{
-      renderEditBuilderPitch();
-    }catch(err){
-      var dbg=document.getElementById('editDebugInfo');
-      if(dbg) dbg.textContent='ERROR: '+err.message+' | '+err.stack.split('\n')[0];
-      var hint=document.getElementById('editBuilderHint');
-      if(hint) hint.textContent='JS ERROR: '+err.message;
-    }
-  }
-}
-
-function setEditTool(tool){
-  editBuilderTool=tool;editBuilderRunStart=null;
-  var allTools=['editToolAttacker','editToolDefender','editToolGk','editToolBall','editToolPass','editToolRun','editToolShot','editToolPen','editToolErase'];
-  allTools.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('active');});
-  var map={attacker:'editToolAttacker',defender:'editToolDefender',gk:'editToolGk',ball:'editToolBall',pass:'editToolPass',run:'editToolRun',shot:'editToolShot',pen:'editToolPen',erase:'editToolErase'};
-  var el=document.getElementById(map[tool]);if(el)el.classList.add('active');
-  var hint=document.getElementById('editBuilderHint');if(hint)hint.textContent=editBuilderHintText();
-}
-
-function editBuilderHintText(){
-  var hints={attacker:'Tap empty space to place, drag existing players to move',defender:'Tap empty space to place, drag existing players to move',gk:'Tap empty space to place, drag to move',ball:'Tap empty space to place, drag to move',pass:'Tap START point of pass arrow',run:'Tap START point of run arrow',shot:'Tap START point of shot arrow',pen:'Tap START point of line',erase:'Tap element to erase'};
-  return hints[editBuilderTool]||'Tap pitch';
-}
-
-function renderEditBuilderPitch(){
-  var svg=document.getElementById('editBuilderSvg');
-  if(!svg) return;
-  // Update viewBox to match native coordinate space — no rescaling needed
-  var vw=editDiagramVW||200, vh=editDiagramVH||280;
-  svg.setAttribute('viewBox','0 0 '+vw+' '+vh);
-  var dbg=document.getElementById('editDebugInfo');
-  if(dbg) dbg.textContent='Rendered: '+editBuilderElements.length+' elements ('+vw+'x'+vh+')';
-  var lc='rgba(255,255,255,0.6)';
-  var html='<rect width="'+vw+'" height="'+vh+'" fill="#2d7a3a"/>'+
-    '<rect x="0" y="0" width="'+vw+'" height="'+vh+'" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
-    '<line x1="0" y1="2" x2="'+vw+'" y2="2" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="'+(vw*0.175)+'" y="'+(vh*0.757)+'" width="'+(vw*0.65)+'" height="'+(vh*0.243)+'" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
-    '<rect x="'+(vw*0.325)+'" y="'+(vh*0.886)+'" width="'+(vw*0.35)+'" height="'+(vh*0.114)+'" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="'+(vw*0.4)+'" y="'+(vh*0.971)+'" width="'+(vw*0.2)+'" height="'+(vh*0.029)+'" fill="rgba(40,55,70,0.85)" stroke="'+lc+'" stroke-width="1"/>'+
-    '<circle cx="'+(vw*0.5)+'" cy="'+(vh*0.829)+'" r="2" fill="'+lc+'"/>'+
-    '<circle cx="2" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<circle cx="'+(vw-2)+'" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
-  var lc='rgba(255,255,255,0.6)';
-  // Pitch background scaled to native coordinate space
-  var html='<rect width="'+vw+'" height="'+vh+'" fill="#2d7a3a"/>'+
-    '<rect x="0" y="0" width="'+vw+'" height="'+vh+'" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
-    '<line x1="0" y1="2" x2="'+vw+'" y2="2" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="'+(vw*0.175)+'" y="'+(vh*0.757)+'" width="'+(vw*0.65)+'" height="'+(vh*0.243)+'" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
-    '<rect x="'+(vw*0.325)+'" y="'+(vh*0.886)+'" width="'+(vw*0.35)+'" height="'+(vh*0.114)+'" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="'+(vw*0.4)+'" y="'+(vh*0.971)+'" width="'+(vw*0.2)+'" height="'+(vh*0.029)+'" fill="rgba(40,55,70,0.85)" stroke="'+lc+'" stroke-width="1"/>'+
-    '<circle cx="'+(vw*0.5)+'" cy="'+(vh*0.829)+'" r="2" fill="'+lc+'"/>'+
-    '<circle cx="2" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<circle cx="'+(vw-2)+'" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
-
-  if(editBuilderRunStart && ['pass','run','shot','pen'].includes(editBuilderTool)){
-    var pcol=editBuilderTool==='pass'?'#00C2FF':editBuilderTool==='shot'?'#FF4D6A':editBuilderTool==='pen'?'#E8F0F8':'#FFD600';
-    html+='<circle cx="'+editBuilderRunStart.x+'" cy="'+editBuilderRunStart.y+'" r="5" fill="'+pcol+'" opacity="0.6" stroke-dasharray="3,2" stroke="#fff" stroke-width="1"/>';
-    html+='<text x="'+editBuilderRunStart.x+'" y="'+(editBuilderRunStart.y-8)+'" text-anchor="middle" fill="'+pcol+'" font-size="8">Tap end point</text>';
-  }
-
-  editBuilderElements.forEach(function(el,idx){
-    if(el.type==='attacker'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#00C2FF" stroke="#fff" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="8" font-weight="700">'+(el.label||'A')+'</text>';
-    } else if(el.type==='defender'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FF4D6A" stroke="#fff" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#fff" font-size="8" font-weight="700">'+(el.label||'D')+'</text>';
-    } else if(el.type==='neutral'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#F9A825" stroke="#fff" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="8" font-weight="700">'+(el.label||'N')+'</text>';
-    } else if(el.type==='gk'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FFB300" stroke="#fff" stroke-width="1.5"/>'+
-        '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="700">GK</text>';
-    } else if(el.type==='ball'){
-      html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="6" fill="#fff" stroke="#333" stroke-width="1"/>'+
-        '<circle cx="'+el.x+'" cy="'+el.y+'" r="3" fill="#555"/>';
-    } else if(el.type==='cone'){
-      html+='<polygon points="'+el.x+','+(el.y-7)+' '+(el.x-5)+','+(el.y+4)+' '+(el.x+5)+','+(el.y+4)+'" fill="#FF8A3D" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
-    } else if(el.type==='pole'){
-      html+='<rect x="'+(el.x-2)+'" y="'+(el.y-12)+'" width="4" height="24" fill="#78909C" rx="2"/>'+
-        '<ellipse cx="'+el.x+'" cy="'+(el.y-12)+'" rx="4" ry="2.5" fill="#78909C"/>';
-    } else if(el.type==='goal'){
-      html+='<rect x="'+(el.x-18)+'" y="'+(el.y-10)+'" width="36" height="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.6)" stroke-width="2" rx="1"/>';
-    } else if(el.type==='mini_goal'){
-      html+='<rect x="'+(el.x-8)+'" y="'+(el.y-6)+'" width="16" height="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" rx="1"/>';
-    } else if(el.type==='area'){
-      html+='<rect x="'+el.x+'" y="'+el.y+'" width="'+(el.w||30)+'" height="'+(el.h||30)+'" fill="'+(el.fill||'rgba(0,194,255,0.04)')+'" stroke="'+(el.stroke||'rgba(0,194,255,0.3)')+'" stroke-width="1.5" stroke-dasharray="'+(el.dashed?'5,3':'none')+'" rx="2"/>';
-      if(el.label) html+='<text x="'+(el.x+(el.w||30)/2)+'" y="'+(el.y-4)+'" text-anchor="middle" fill="rgba(0,194,255,0.65)" font-size="7">'+el.label+'</text>';
-    } else if(el.type==='label'){
-      html+='<text x="'+el.x+'" y="'+el.y+'" text-anchor="'+(el.anchor||'middle')+'" fill="'+(el.color||'rgba(180,200,220,0.65)')+'" font-size="'+(el.size||8)+'">'+(el.text||el.label||'')+'</text>';
-    } else if(el.type==='pen'){
-      // Plain neutral-colour straight line, no arrowhead — for free annotation, not a directional run.
-      html+='<line x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+
-        '" stroke="#E8F0F8" stroke-width="2" stroke-linecap="round"/>';
-    } else if(el.type==='pass'||el.type==='run'||el.type==='shot'||el.type==='dribble'){
-      var col=el.type==='pass'?'#00C2FF':el.type==='shot'?'#FF4D6A':el.type==='dribble'?'#00E676':'#FFD600';
-      var dash=el.type==='run'?' stroke-dasharray="5,3"':'';
-      var mid='edit_arr_'+idx;
-      html+='<defs><marker id="'+mid+'" markerWidth="7" markerHeight="7" refX="3" refY="3.5" orient="auto">'+
-        '<path d="M0,0 L7,3.5 L0,7 Z" fill="'+col+'"/></marker></defs>'+
-        '<line x1="'+el.x1+'" y1="'+el.y1+'" x2="'+el.x2+'" y2="'+el.y2+
-        '" stroke="'+col+'" stroke-width="'+(el.type==='shot'?2.5:2)+'"'+dash+
-        ' marker-end="url(#'+mid+')"/>';
-    }
-  });
-
-  svg.innerHTML=html;
-  if(!svg._editBuilderBound){
-    svg._editBuilderBound=true;
-    var dragIdx=-1, dragMoved=false, downPt=null;
-
-    function svgPoint(clientX,clientY){
-      var rect=svg.getBoundingClientRect();
-      return {
-        x:Math.round((clientX-rect.left)*(200/rect.width)),
-        y:Math.round((clientY-rect.top)*(280/rect.height))
-      };
-    }
-
-    function findDraggableAt(x,y){
-      // Only point-based elements (with x/y, not arrows or lines) can be dragged.
-      var draggableTypes=['attacker','defender','gk','ball','neutral','cone','pole','goal','mini_goal'];
-      var minDist=999,minIdx=-1;
-      editBuilderElements.forEach(function(el,i){
-        if(draggableTypes.indexOf(el.type)<0)return;
-        if(!('x' in el))return;
-        var d=Math.sqrt((el.x-x)*(el.x-x)+(el.y-y)*(el.y-y));
-        if(d<minDist){minDist=d;minIdx=i;}
-      });
-      return (minIdx>=0 && minDist<14) ? minIdx : -1;
-    }
-
-    function onDown(x,y){
-      downPt={x:x,y:y};
-      dragMoved=false;
-      // Dragging is only offered for placement tools (not pass/run/shot/pen/erase),
-      // so those tools keep their existing tap-start/tap-end behaviour untouched.
-      var placementTools=['attacker','defender','gk','ball'];
-      if(placementTools.indexOf(editBuilderTool)>=0){
-        dragIdx=findDraggableAt(x,y);
-      } else {
-        dragIdx=-1;
-      }
-    }
-
-    function onMove(x,y){
-      if(dragIdx<0)return;
-      dragMoved=true;
-      editBuilderElements[dragIdx].x=x;
-      editBuilderElements[dragIdx].y=y;
-      renderEditBuilderPitch();
-    }
-
-    function onUp(x,y){
-      if(dragIdx>=0 && dragMoved){
-        // Drag completed — element already updated live during move, nothing further to do.
-        dragIdx=-1;dragMoved=false;downPt=null;
-        return;
-      }
-      // No drag happened — treat as a normal tap (existing place/arrow/erase behaviour).
-      dragIdx=-1;dragMoved=false;downPt=null;
-      handleEditBuilderClick(x,y);
-    }
-
-    svg.addEventListener('touchstart',function(e){
-      var t=e.touches[0];var p=svgPoint(t.clientX,t.clientY);
-      onDown(p.x,p.y);
-    },{passive:true});
-    svg.addEventListener('touchmove',function(e){
-      if(dragIdx<0)return;
-      e.preventDefault();
-      var t=e.touches[0];var p=svgPoint(t.clientX,t.clientY);
-      onMove(p.x,p.y);
-    },{passive:false});
-    svg.addEventListener('touchend',function(e){
-      e.preventDefault();
-      var t=e.changedTouches[0];var p=svgPoint(t.clientX,t.clientY);
-      onUp(p.x,p.y);
-    },{passive:false});
-
-    svg.addEventListener('mousedown',function(e){
-      if(e.sourceCapabilities&&e.sourceCapabilities.firesTouchEvents)return;
-      var p=svgPoint(e.clientX,e.clientY);
-      onDown(p.x,p.y);
-    });
-    svg.addEventListener('mousemove',function(e){
-      if(dragIdx<0)return;
-      var p=svgPoint(e.clientX,e.clientY);
-      onMove(p.x,p.y);
-    });
-    svg.addEventListener('mouseup',function(e){
-      if(e.sourceCapabilities&&e.sourceCapabilities.firesTouchEvents)return;
-      var p=svgPoint(e.clientX,e.clientY);
-      onUp(p.x,p.y);
-    });
-  }
-}
-
-function handleEditBuilderClick(x,y){
-  var hint=document.getElementById('editBuilderHint');
-  if(editBuilderTool==='erase'){
-    var minDist=999,minIdx=-1;
-    editBuilderElements.forEach(function(el,i){
-      var ex=el.x||((el.x1+el.x2)/2)||0,ey=el.y||((el.y1+el.y2)/2)||0;
-      var d=Math.sqrt((ex-x)*(ex-x)+(ey-y)*(ey-y));
-      if(d<minDist){minDist=d;minIdx=i;}
-    });
-    if(minIdx>=0&&minDist<25){editBuilderElements.splice(minIdx,1);}
-    renderEditBuilderPitch();return;
-  }
-  if(editBuilderTool==='pass'||editBuilderTool==='run'||editBuilderTool==='shot'||editBuilderTool==='pen'){
-    if(!editBuilderRunStart){
-      editBuilderRunStart={x:x,y:y};
-      if(hint){
-        var labels={pass:'Tap end point for pass arrow',run:'Tap end point for run arrow',shot:'Tap end point for shot arrow',pen:'Tap end point for line'};
-        hint.textContent=labels[editBuilderTool]||'Tap end point';
-      }
-    } else {
-      editBuilderElements.push({type:editBuilderTool,x1:editBuilderRunStart.x,y1:editBuilderRunStart.y,x2:x,y2:y});
-      editBuilderRunStart=null;
-      if(hint) hint.textContent=editBuilderHintText();
-    }
-    renderEditBuilderPitch();return;
-  }
-  editBuilderPlayerCount++;
-  var label=editBuilderTool==='attacker'?('A'+editBuilderPlayerCount):editBuilderTool==='defender'?('D'+editBuilderPlayerCount):'GK';
-  editBuilderElements.push({type:editBuilderTool,x:x,y:y,label:label});
-  renderEditBuilderPitch();
-  if(hint) hint.textContent=editBuilderHintText();
-}
-
-function editBuilderUndo(){
-  if(editBuilderRunStart){editBuilderRunStart=null;renderEditBuilderPitch();return;}
-  if(editBuilderElements.length>0){editBuilderElements.pop();editBuilderPlayerCount=Math.max(0,editBuilderPlayerCount-1);}
-  renderEditBuilderPitch();
-}
-
-function clearEditDiagram(){
-  if(!confirm('Clear the entire diagram?'))return;
-  editBuilderElements=[];editBuilderPlayerCount=0;editBuilderRunStart=null;
-  renderEditBuilderPitch();
-}
-
-async function saveEditedSession(){
-  if(editSessionIndex<0||!userSessions[editSessionIndex])return;
-  var s=userSessions[editSessionIndex];
-  var newTitle=document.getElementById('editTitleInput').value.trim();
-  var newContent=document.getElementById('editContentInput').value;
-  // Capture the currently-visible phase's live edits before building the save payload
-  if(editSessionPhases[editCurrentPhaseIdx]) editSessionPhases[editCurrentPhaseIdx].elements=editBuilderElements;
-
-  // 'overview' is the real text column on sessions. Editing always overwrites it with
-  // the full edited text — phases/tip from the original structured session are no longer
-  // shown separately once edited, since 'overview' becomes the single source of truth.
-  // Diagram save logic: if this session had multiple phase diagrams, combine them all into
-  // one flat elements array tagged with which phase they belong to, so all edits are kept.
-  // If it only ever had a single diagram (or was already a custom-edited session), save as-is.
-  var savedElements;
-  if(editSessionPhases.length>1){
-    savedElements=[];
-    editSessionPhases.forEach(function(ph,idx){
-      ph.elements.forEach(function(el){savedElements.push(Object.assign({_phase:idx,_phaseLabel:ph.label},el));});
-    });
-  } else {
-    savedElements=editBuilderElements;
-  }
-
-  var updates={
-    title:newTitle||s.title,
-    overview:newContent,
-    edited:true,
-    elements:savedElements,
-    diagram_vw:editDiagramVW,
-    diagram_vh:editDiagramVH,
-    updated_at:new Date().toISOString()
-  };
-  try{
-    var res=await sb.from('sessions').update(updates).eq('id',s.id).select();
-    if(res.error)throw new Error(res.error.message);
-    Object.assign(s,updates);
-    alert('Session updated!');
-    navigate('/history');
-  }catch(e){
-    console.error('saveEditedSession error:',e);
-    alert('Could not save changes: '+e.message);
-  }
-}
 
 
-function toggleAiResultEdit(){
-  if(!isCoachPlan()&&!isClubPlan()){alert('Editing before saving is available on Coach, Club and Club Pro plans.');return;}
-  var view=document.getElementById('aiResultContent');
-  var edit=document.getElementById('aiResultEditArea');
-  var btn=document.getElementById('aiEditToggleBtn');
-  var editing=edit.style.display==='block';
-  if(!editing){
-    edit.value=aiSessionResult;
-    view.style.display='none';edit.style.display='block';
-    btn.textContent='👁️ Preview';
-  } else {
-    view.innerHTML=formatAiResult(aiSessionResult);
-    view.style.display='block';edit.style.display='none';
-    btn.textContent='✏️ Edit Before Saving';
-  }
-}
 
-function toggleFitnessResultEdit(){
-  if(!isClubProPlan()){alert('Fitness sessions require Club Pro.');return;}
-  var view=document.getElementById('fitnessResultContent');
-  var edit=document.getElementById('fitnessResultEditArea');
-  var btn=document.getElementById('fitnessEditToggleBtn');
-  var hint=document.getElementById('fitnessEditHint');
-  var editing=edit.style.display==='block';
-  if(!editing){
-    edit.value=fitnessSessionResult;
-    view.style.display='none';edit.style.display='block';
-    btn.textContent='👁️ Preview';
-    hint.textContent='Keep "PHASE: name | duration | description" lines in this format so the timeline displays correctly once saved.';
-  } else {
-    view.innerHTML=formatFitnessResult(fitnessSessionResult);
-    view.style.display='block';edit.style.display='none';
-    btn.textContent='✏️ Edit Before Saving';
-    hint.textContent='';
-  }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async 
+
+
+
+
+
 
 // ══ DIAGRAM ANIMATION ENGINE ══════════════════════════════════════════════════
 
@@ -5401,30 +4837,10 @@ function toggleFitnessResultEdit(){
 // Returns the HTML for the Play/Pause/Restart bar IF the phase has animated steps.
 // pTmpl is the matched template phase (has raw elements with step fields).
 // p is the saved session phase (may or may not have setup).
-function buildAnimControls(p, pTmpl, phaseIdx){
-  // Get the raw elements from this phase's setup.
-  // IMPORTANT: p.setup survives the DB round-trip for Solo sessions (plain JSON).
-  // For Team sessions, p.setup is null — use pTmpl.setup (from live JS template).
-  // Never use p.diagram (it was a function, dropped by JSON.stringify → null in DB).
-  var setup = (p && p.setup && p.setup.elements && p.setup.elements.length) ? p.setup :
-              (pTmpl && pTmpl.setup && pTmpl.setup.elements && pTmpl.setup.elements.length) ? pTmpl.setup : null;
-  if(!setup || !setup.elements) return '';
-  var hasSteps = setup.elements.some(function(el){ return el.step; });
-  if(!hasSteps) return '';
 
-  // Encode elements as base64 JSON to safely embed in HTML attribute
-  var data = JSON.stringify({elements:setup.elements, vw:setup.vw||200, vh:setup.vh||200});
-  var encoded = btoa(unescape(encodeURIComponent(data)));
-
-  return '<div class="anim-controls" id="animCtrl_'+phaseIdx+'">' +
-    '<button class="anim-btn" onclick="animPlay(\''+phaseIdx+'\',\''+encoded+'\',this)" id="animPlayBtn_'+phaseIdx+'">▶ Play</button>' +
-    '<button class="anim-btn" onclick="animRestart(\''+phaseIdx+'\',\''+encoded+'\')" id="animRestartBtn_'+phaseIdx+'">↺ Restart</button>' +
-    '<span class="anim-label">Tap Play to animate this diagram</span>' +
-    '</div>';
-}
 
 // ── ANIMATION STATE ────────────────────────────────────────────────────────
-var _animState = {}; // keyed by phaseIdx: {raf, playing, step, t0, stepStart, steps, svgEl, origHtml, elements, vw, vh}
+ // keyed by phaseIdx: {raf, playing, step, t0, stepStart, steps, svgEl, origHtml, elements, vw, vh}
 
 // ── PUBLIC API ─────────────────────────────────────────────────────────────
 function animPlay(phaseIdx, encoded, btn){
@@ -6285,96 +5701,6 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 
 <!-- ══════════ FITNESS SESSION GENERATOR ══════════ -->
-<div id="fitnessSessionScreen" class="screen">
-  <div class="wrap">
-    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/fitness')">← Fitness Hub</button></div>
-    <div class="pro-badge">⚡ Club Pro</div>
-    <h2 id="fitnessSessionTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 4px">Speed &amp; <em>Agility</em></h2>
-    <p style="font-size:12px;color:var(--muted);margin:0 0 14px">Describe the session you need — AI builds it instantly.</p>
-
-    <div id="fitnessPromptArea">
-      <div class="form-group">
-        <textarea class="form-input" id="fitnessPromptInput" rows="3" placeholder="e.g. Repeated sprint and change of direction session for U16s, pre-season week 2, 40 minutes" style="resize:none;font-size:14px"></textarea>
-      </div>
-      <button class="btn" style="width:100%" onclick="runFitnessAssistant()" id="fitnessRunBtn">✨ Generate Fitness Session</button>
-      <div id="fitnessErrorMsg" class="msg" style="display:none"></div>
-    </div>
-
-    <div id="fitnessResultArea" style="display:none">
-      <div style="height:1px;background:var(--border);margin:16px 0"></div>
-      <div id="fitnessResultContent" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
-      <textarea id="fitnessResultEditArea" style="display:none;width:100%;min-height:300px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;padding:12px;resize:vertical" oninput="fitnessSessionResult=this.value"></textarea>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fitnessEditHint"></div>
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn" style="flex:1" onclick="saveFitnessSession()">💾 Save to Fitness Library</button>
-        <button class="btn-ghost" id="fitnessEditToggleBtn" style="flex:1" onclick="toggleFitnessResultEdit()">✏️ Edit Before Saving</button>
-      </div>
-      <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="document.getElementById('fitnessResultArea').style.display='none';document.getElementById('fitnessPromptArea').style.display='block'">New Session</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ══════════ EDIT SESSION (text + diagram) ══════════ -->
-<div id="editSessionScreen" class="screen">
-  <div class="wrap">
-    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/history')">← Session History</button></div>
-    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;margin:0 0 2px">Edit <em>Session</em></h2>
-    <p id="editSessionSub" style="font-size:11px;color:var(--muted);margin:0 0 12px"></p>
-
-    <div class="tabs">
-      <div class="tab active" id="editTabText" onclick="switchEditTab('text')">✏️ Edit Text</div>
-      <div class="tab" id="editTabDiagram" onclick="switchEditTab('diagram')">🎯 Edit Diagram</div>
-    </div>
-
-    <div class="edit-banner">
-      <div class="edit-banner-dot"></div>
-      <span>Editing — changes are not saved until you tap Save</span>
-    </div>
-
-    <!-- TEXT EDIT -->
-    <div id="editTextPane">
-      <div class="field-label">Session Title</div>
-      <input class="form-input" id="editTitleInput" type="text"/>
-      <div class="field-label">Session Content</div>
-      <textarea class="form-input" id="editContentInput" rows="14" style="resize:none;font-size:13px;line-height:1.6"></textarea>
-      <div class="footer-note">Diagram is edited separately — switch to the Edit Diagram tab to adjust player positions and arrows.</div>
-    </div>
-
-    <!-- DIAGRAM EDIT -->
-    <div id="editDiagramPane" style="display:none">
-      <div id="editPhaseSelectorWrap" style="display:none;margin-bottom:10px">
-        <div class="field-label" style="margin-top:0">Which Diagram?</div>
-        <select id="editPhaseSelector" class="form-input" onchange="switchEditPhase(this.value)" style="font-size:13px"></select>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
-        <button class="sp-tool-btn active" id="editToolAttacker" onclick="setEditTool('attacker')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🔵</span>Attacker</button>
-        <button class="sp-tool-btn" id="editToolDefender" onclick="setEditTool('defender')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🔴</span>Defender</button>
-        <button class="sp-tool-btn" id="editToolGk" onclick="setEditTool('gk')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🟡</span>GK</button>
-        <button class="sp-tool-btn" id="editToolBall" onclick="setEditTool('ball')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">⚽</span>Ball</button>
-        <button class="sp-tool-btn" id="editToolPass" onclick="setEditTool('pass')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#00C2FF;display:block;margin:6px auto 2px"></span>Pass</button>
-        <button class="sp-tool-btn" id="editToolRun" onclick="setEditTool('run')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;border-top:3px dashed #FFD600;display:block;margin:6px auto 2px"></span>Run</button>
-        <button class="sp-tool-btn" id="editToolShot" onclick="setEditTool('shot')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#FF4D6A;display:block;margin:6px auto 2px"></span>Shot</button>
-        <button class="sp-tool-btn" id="editToolPen" onclick="setEditTool('pen')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#E8F0F8;display:block;margin:6px auto 2px"></span>Pen</button>
-        <button class="sp-tool-btn" id="editToolErase" onclick="setEditTool('erase')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">✕</span>Erase</button>
-      </div>
-      <div id="editBuilderHint" style="font-size:11px;color:var(--accent);text-align:center;margin-bottom:6px;min-height:16px">Tap pitch to place attacker</div>
-      <div id="editDebugInfo" style="font-size:9px;color:#FFD600;text-align:center;margin-bottom:4px;word-break:break-all"></div>
-      <div class="sp-builder-pitch" id="editBuilderPitch">
-        <svg id="editBuilderSvg" viewBox="0 0 200 280" style="width:100%;touch-action:none;cursor:crosshair;pointer-events:all;display:block"></svg>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="nav-btn" style="flex:1" onclick="editBuilderUndo()">↩ Undo</button>
-        <button class="nav-btn" style="flex:1" onclick="clearEditDiagram()">✕ Clear</button>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:18px">
-      <button class="btn" style="flex:1" onclick="saveEditedSession()">💾 Save Changes</button>
-      <button class="btn-ghost" style="flex:1" onclick="navigate('/history')">Cancel</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
