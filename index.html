@@ -971,7 +971,6 @@ fbq('track','PageView');
     <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="showScreen('dashboardScreen')">Dashboard</button></div>
     <button class="back-btn" onclick="showScreen('dashboardScreen')">← Back to Dashboard</button>
     <div id="sessionContent"></div>
-    <button class="btn-ghost" id="sessionEditBtn" style="display:none;margin-bottom:6px" onclick="openEditCurrentSession()">✏️ Edit Diagram</button>
     <button class="pdf-btn" id="pdfBtn" onclick="exportPDF()">📄 Export as PDF</button>
     <button class="btn-ghost" onclick="tryStartSession()">Build Another Session</button>
   </div>
@@ -4045,18 +4044,25 @@ function renderSessionContent(s){
 }
 
 
-function viewSession(i){
+function viewSession(i, fromHistory){
   const s=userSessions[i];
-  // Attach sessionId and isTeam from DB record if available
   currentSession={
     ...s,
     sessionId:s.session_id||s.sessionId||null,
     isTeam:s.is_team||s.isTeam||false,
-    diagram:null // renderSessionContent resolves from template
+    diagram:null
   };
   renderSessionContent(currentSession);
   document.getElementById('pdfBtn').style.display=(userPlan!=='free')?'flex':'none';
-
+  // Update back button destination based on where we came from
+  var backDest = fromHistory ? 'sessionHistoryScreen' : 'dashboardScreen';
+  var backLabel = fromHistory ? '← Session History' : '← Back to Dashboard';
+  document.querySelectorAll('#sessionScreen .back-btn, #sessionScreen .nav-btn').forEach(function(b){
+    if(b.textContent.indexOf('Back')>=0 || b.textContent.indexOf('Dashboard')>=0 || b.textContent.indexOf('History')>=0){
+      b.textContent = backLabel;
+      b.onclick = function(){ showScreen(backDest); };
+    }
+  });
   showScreen('sessionScreen');
 }
 
@@ -4558,48 +4564,9 @@ function renderSessionHistory(){
   }).join('');
 }
 function viewHistorySession(i){
-  var s=userSessions[i];if(!s)return;
-  // Build display content from whatever fields exist
-  var bodyText='';
-  if(s.content){bodyText=s.content;}
-  else{
-    if(s.overview)bodyText+='OVERVIEW\n'+s.overview+'\n\n';
-    if(s.focus)bodyText+='FOCUS: '+s.focus+'\n';
-    if(s.age)bodyText+='AGE GROUP: '+s.age+'\n';
-    if(s.time)bodyText+='DURATION: '+s.time+'\n';
-    if(s.intensity)bodyText+='INTENSITY: '+s.intensity+'\n\n';
-    if(s.tip)bodyText+='COACHING TIP\n'+s.tip+'\n\n';
-    if(s.phases&&s.phases.length){
-      s.phases.forEach(function(ph){
-        bodyText+=(ph.name||'Phase').toUpperCase()+'\n';
-        if(ph.desc)bodyText+=ph.desc+'\n';
-        if(ph.points&&ph.points.length)bodyText+='Coaching points:\n'+ph.points.map(function(p){return '- '+p;}).join('\n')+'\n';
-        bodyText+='\n';
-      });
-    }
-    if(!bodyText)bodyText='Session details not available.';
-  }
-  var overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,15,26,0.95);z-index:9999;overflow-y:auto;padding:20px';
-  var wrap=document.createElement('div');wrap.style.maxWidth='600px';wrap.style.margin='0 auto';
-  var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;margin-bottom:16px';
-  if(isCoachPlan()||isClubPlan()){
-    var editBtn2=document.createElement('button');
-    editBtn2.className='btn';
-    editBtn2.style.marginBottom='8px';
-    editBtn2.textContent='✏️ Edit Diagram';
-    (function(idx){editBtn2.onclick=function(){modal.remove();openEditSession(idx);};})(i);
-    modal.appendChild(editBtn2);
-  }
-  var closeBtn=document.createElement('button');closeBtn.textContent='Close';
-  closeBtn.style.cssText='background:#0F2540;border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;touch-action:manipulation;flex:1';
-  closeBtn.onclick=function(){document.body.removeChild(overlay);};
-  btnRow.appendChild(closeBtn);
-  
-  var h=document.createElement('h2');h.textContent=s.title||s.focus||'Session';h.style.cssText='font-size:18px;font-weight:800;color:#fff;margin:0 0 12px';
-  var bd=document.createElement('div');bd.textContent=bodyText;bd.style.cssText='font-size:13px;line-height:1.7;color:#c8d8e8;white-space:pre-wrap';
-  wrap.appendChild(btnRow);wrap.appendChild(h);wrap.appendChild(bd);overlay.appendChild(wrap);document.body.appendChild(overlay);
+  viewSession(i, true);
 }
+
 // ══ WEEKLY PLANNER ════════════════════════════════
 var weeklyPlan={mon:'',tue:'',wed:'',thu:'',fri:'',sat:'',sun:''};
 function openWeeklyPlanner(){document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});document.getElementById('weeklyPlannerScreen').classList.add('active');try{var sv=localStorage.getItem('twp_'+(currentUser&&currentUser.id));if(sv)weeklyPlan=JSON.parse(sv);}catch(e){}renderWeeklyPlanner();window.scrollTo(0,0);}
@@ -5240,336 +5207,34 @@ function _easeInOut(t){
 // SESSION_SETUPS[sessionId].phases[i].setup.elements → native coordinates
 // This is the only proven-working diagram resolution path.
 
-var editSessionIndex = -1;
-var editBuilderElements = [];
-var editBuilderPlayerCount = 0;
-var editBuilderTool = 'attacker';
-var editBuilderRunStart = null;
-var editDiagramVW = 200;
-var editDiagramVH = 280;
-var editSessionPhases = []; // [{label, elements, vw, vh}]
-var editCurrentPhaseIdx = 0;
+ // [{label, elements, vw, vh}]
 
-function openEditSession(i){
-  if(!isCoachPlan()&&!isClubPlan()) return;
-  var s = userSessions[i];
-  if(!s) return;
-  editSessionIndex = i;
 
-  var sessionId = s.session_id || s.sessionId || null;
-  var isTeam    = s.is_team    || s.isTeam    || false;
-
-  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(el){el.classList.remove('active');});
-  document.getElementById('editSessionScreen').classList.add('active');
-  document.getElementById('editSessionSub').textContent = (s.focus||s.category||'') + (s.time?' · '+s.time:'');
-
-  editBuilderElements = [];
-  editSessionPhases   = [];
-  editCurrentPhaseIdx = 0;
-  editDiagramVW = 200;
-  editDiagramVH = 280;
-
-  // ── PRIORITY 1: previously saved custom edits ────────────────────────────
-  if(s.elements && Array.isArray(s.elements) && s.elements.length){
-    editDiagramVW = s.diagram_vw || 200;
-    editDiagramVH = s.diagram_vh || 280;
-    editBuilderElements = JSON.parse(JSON.stringify(s.elements));
-
-  // ── PRIORITY 2+3: use getPhaseSetup — mirrors getPhaseDefaultDiagram exactly
-  } else {
-    var phases = Array.isArray(s.phases) ? s.phases : [];
-    if(phases.length === 0){
-      // No phases saved — try to find template for a single diagram
-      var setup0 = _getPhaseSetup(sessionId, 0, '', isTeam, '');
-      if(setup0 && setup0.elements && setup0.elements.length){
-        editDiagramVW = setup0.vw || 200;
-        editDiagramVH = setup0.vh || 280;
-        editBuilderElements = _normArrows(JSON.parse(JSON.stringify(setup0.elements)));
-      }
-    } else {
-      phases.forEach(function(p, idx){
-        var setup = _getPhaseSetup(sessionId, idx, p.phase||p.name||'', isTeam, p.desc||'');
-        if(setup && setup.elements && setup.elements.length){
-          editSessionPhases.push({
-            label:   p.title || p.phase || p.name || ('Phase '+(idx+1)),
-            elements: _normArrows(JSON.parse(JSON.stringify(setup.elements))),
-            vw: setup.vw || 200,
-            vh: setup.vh || 280
-          });
-        }
-      });
-      if(editSessionPhases.length > 0){
-        editDiagramVW = editSessionPhases[0].vw;
-        editDiagramVH = editSessionPhases[0].vh;
-        editBuilderElements = JSON.parse(JSON.stringify(editSessionPhases[0].elements));
-      }
-    }
-  }
-
-  editBuilderPlayerCount = editBuilderElements.filter(function(e){
-    return e.type === 'attacker' || e.type === 'defender';
-  }).length;
-
-  var phSel  = document.getElementById('editPhaseSelectorWrap');
-  var phOpts = document.getElementById('editPhaseSelector');
-  if(phSel && phOpts){
-    if(editSessionPhases.length > 1){
-      phOpts.innerHTML = editSessionPhases.map(function(p,i){
-        return '<option value="'+i+'">'+p.label+'</option>';
-      }).join('');
-      phSel.style.display = 'block';
-    } else {
-      phSel.style.display = 'none';
-    }
-  }
-
-  var svgEl = document.getElementById('editBuilderSvg');
-  if(svgEl) svgEl._editBuilderBound = false;
-
-  renderEditBuilderPitch();
-  window.scrollTo(0,0);
-}
 
 // Mirrors getPhaseDefaultDiagram exactly but returns the setup{} object
 // instead of calling renderSetupDiagram — giving Edit Diagram the raw elements.
-function _getPhaseSetup(sessionId, phaseIndex, phaseName, isTeam, desc){
-  // Step 1: SESSION_SETUPS exact match (same as getPhaseDefaultDiagram Step 1)
-  if(sessionId){
-    var setupData = SESSION_SETUPS[sessionId];
-    if(setupData && setupData.phases && setupData.phases[phaseIndex] &&
-       setupData.phases[phaseIndex].setup){
-      return setupData.phases[phaseIndex].setup;
-    }
-  }
-  // Step 2: Build from desc (same as getPhaseDefaultDiagram Step 2)
-  var descToUse = desc || (
-    phaseName === 'Activation'    ? '1 player warm-up drill with cones' :
-    phaseName === 'Technical'     ? (isTeam ? '6 v 3 technical drill 20m x 15m area' : '1 player technical drill with 6 cones') :
-    phaseName === 'Game Scenario' ? (isTeam ? '8 v 8 game scenario full pitch' : '1 player game scenario drill') :
-                                    '1 player cool down light passing stretch'
-  );
-  // Intercept renderSetupDiagram to capture the setup object
-  var captured = null;
-  var origRender = window.renderSetupDiagram;
-  window.renderSetupDiagram = function(setup){ captured = setup; return ''; };
-  try{ buildAndValidateDiagram(descToUse, phaseName, isTeam); }catch(e){}
-  window.renderSetupDiagram = origRender;
-  return captured;
-}
+
 
 // Normalise arrow start coords: x/y → x1/y1 for pass/run/shot/dribble
-function _normArrows(els){
-  return els.map(function(e){
-    var n = Object.assign({}, e);
-    if(['pass','run','shot','dribble'].indexOf(n.type) >= 0){
-      if(!('x1' in n) && 'x' in n){ n.x1 = n.x; n.y1 = n.y; delete n.x; delete n.y; }
-    }
-    return n;
-  });
-}
 
 
-function openEditCurrentSession(){
-  if(!currentSession) return;
-  var idx = currentSession.id
-    ? userSessions.findIndex(function(s){ return s.id === currentSession.id; })
-    : userSessions.findIndex(function(s){ return s.session_id === currentSession.sessionId || s.title === currentSession.title; });
-  if(idx < 0 && userSessions.length > 0) idx = 0;
-  if(idx >= 0) openEditSession(idx);
-}
 
 
-function switchEditPhase(idx){
-  if(!editSessionPhases[idx]) return;
-  if(editSessionPhases[editCurrentPhaseIdx])
-    editSessionPhases[editCurrentPhaseIdx].elements = editBuilderElements;
-  editCurrentPhaseIdx = idx;
-  editDiagramVW = editSessionPhases[idx].vw;
-  editDiagramVH = editSessionPhases[idx].vh;
-  editBuilderElements = JSON.parse(JSON.stringify(editSessionPhases[idx].elements));
-  editBuilderRunStart = null;
-  editBuilderPlayerCount = editBuilderElements.filter(function(e){
-    return e.type==='attacker'||e.type==='defender';
-  }).length;
-  var svgEl = document.getElementById('editBuilderSvg');
-  if(svgEl) svgEl._editBuilderBound = false;
-  renderEditBuilderPitch();
-}
 
-function setEditTool(tool){
-  editBuilderTool = tool; editBuilderRunStart = null;
-  ['Attacker','Defender','Gk','Ball','Pass','Run','Shot','Erase'].forEach(function(t){
-    var el = document.getElementById('editTool'+t);
-    if(el) el.classList.toggle('active', t.toLowerCase()===tool);
-  });
-  var hint = document.getElementById('editBuilderHint');
-  if(hint) hint.textContent = {
-    attacker:'Tap pitch to place attacker', defender:'Tap pitch to place defender',
-    gk:'Tap pitch to place goalkeeper', ball:'Tap pitch to place ball',
-    pass:'Tap START point of pass arrow', run:'Tap START point of run arrow',
-    shot:'Tap START point of shot arrow', erase:'Tap element to erase'
-  }[tool]||'Tap pitch';
-}
 
-function renderEditBuilderPitch(){
-  var svg = document.getElementById('editBuilderSvg');
-  if(!svg) return;
-  var vw = editDiagramVW||200, vh = editDiagramVH||280;
-  svg.setAttribute('viewBox','0 0 '+vw+' '+vh);
-  var lc='rgba(255,255,255,0.6)';
-  var html='<rect width="'+vw+'" height="'+vh+'" fill="#2d7a3a"/>'+
-    '<rect x="0" y="0" width="'+vw+'" height="'+vh+'" fill="none" stroke="'+lc+'" stroke-width="1.2"/>'+
-    '<line x1="0" y1="2" x2="'+vw+'" y2="2" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="'+(vw*0.175)+'" y="'+(vh*0.757)+'" width="'+(vw*0.65)+'" height="'+(vh*0.243)+'" fill="none" stroke="'+lc+'" stroke-width="1"/>'+
-    '<rect x="'+(vw*0.325)+'" y="'+(vh*0.886)+'" width="'+(vw*0.35)+'" height="'+(vh*0.114)+'" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<rect x="'+(vw*0.4)+'" y="'+(vh*0.971)+'" width="'+(vw*0.2)+'" height="'+(vh*0.029)+'" fill="rgba(40,55,70,0.85)" stroke="'+lc+'" stroke-width="1"/>'+
-    '<circle cx="'+(vw*0.5)+'" cy="'+(vh*0.829)+'" r="2" fill="'+lc+'"/>'+
-    '<circle cx="2" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>'+
-    '<circle cx="'+(vw-2)+'" cy="'+(vh-2)+'" r="3" fill="none" stroke="'+lc+'" stroke-width="0.8"/>';
 
-  if(editBuilderRunStart && ['pass','run','shot'].indexOf(editBuilderTool)>=0){
-    var pc=editBuilderTool==='pass'?'#00C2FF':editBuilderTool==='shot'?'#FF4D6A':'#FFD600';
-    html+='<circle cx="'+editBuilderRunStart.x+'" cy="'+editBuilderRunStart.y+'" r="5" fill="'+pc+'" opacity="0.6"/>'+
-      '<text x="'+editBuilderRunStart.x+'" y="'+(editBuilderRunStart.y-8)+'" text-anchor="middle" fill="'+pc+'" font-size="8">Tap end point</text>';
-  }
 
-  editBuilderElements.forEach(function(el,idx){
-    switch(el.type){
-      case 'attacker':
-        html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#00C2FF" stroke="#fff" stroke-width="1.5"/>'+
-          '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="8" font-weight="700">'+(el.label||'A')+'</text>';
-        break;
-      case 'defender':
-        html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FF4D6A" stroke="#fff" stroke-width="1.5"/>'+
-          '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#fff" font-size="8" font-weight="700">'+(el.label||'D')+'</text>';
-        break;
-      case 'gk':
-        html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#FFB300" stroke="#fff" stroke-width="1.5"/>'+
-          '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="700">GK</text>';
-        break;
-      case 'neutral':
-        html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="9" fill="#F9A825" stroke="#fff" stroke-width="1.5"/>'+
-          '<text x="'+el.x+'" y="'+(el.y+4)+'" text-anchor="middle" fill="#000" font-size="8" font-weight="700">'+(el.label||'N')+'</text>';
-        break;
-      case 'ball':
-        html+='<circle cx="'+el.x+'" cy="'+el.y+'" r="6" fill="#fff" stroke="#333" stroke-width="1"/>'+
-          '<circle cx="'+el.x+'" cy="'+el.y+'" r="3" fill="#555"/>';
-        break;
-      case 'cone':
-        html+='<polygon points="'+el.x+','+(el.y-7)+' '+(el.x-5)+','+(el.y+4)+' '+(el.x+5)+','+(el.y+4)+'" fill="#FF8A3D" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
-        break;
-      case 'goal':
-        html+='<rect x="'+(el.x-18)+'" y="'+(el.y-10)+'" width="36" height="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.6)" stroke-width="2" rx="1"/>';
-        break;
-      case 'mini_goal':
-        html+='<rect x="'+(el.x-8)+'" y="'+(el.y-6)+'" width="16" height="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" rx="1"/>';
-        break;
-      case 'area':
-        html+='<rect x="'+el.x+'" y="'+el.y+'" width="'+(el.w||30)+'" height="'+(el.h||30)+'" fill="'+(el.fill||'rgba(0,194,255,0.04)')+'" stroke="'+(el.stroke||'rgba(0,194,255,0.3)')+'" stroke-width="1.5" rx="2"/>';
-        if(el.label) html+='<text x="'+(el.x+(el.w||30)/2)+'" y="'+(el.y-4)+'" text-anchor="middle" fill="rgba(0,194,255,0.65)" font-size="7">'+el.label+'</text>';
-        break;
-      case 'label':
-        html+='<text x="'+el.x+'" y="'+el.y+'" text-anchor="'+(el.anchor||'middle')+'" fill="'+(el.color||'rgba(180,200,220,0.65)')+'" font-size="'+(el.size||8)+'">'+(el.text||el.label||'')+'</text>';
-        break;
-      case 'pass': case 'run': case 'shot': case 'dribble': {
-        var col=el.type==='pass'?'#00C2FF':el.type==='shot'?'#FF4D6A':el.type==='dribble'?'#00E676':'#FFD600';
-        var dash=el.type==='run'?' stroke-dasharray="5,3"':'';
-        var mid='earr_'+idx;
-        var x1=el.x1!==undefined?el.x1:(el.x!==undefined?el.x:0);
-        var y1=el.y1!==undefined?el.y1:(el.y!==undefined?el.y:0);
-        html+='<defs><marker id="'+mid+'" markerWidth="7" markerHeight="7" refX="3" refY="3.5" orient="auto">'+
-          '<path d="M0,0 L7,3.5 L0,7 Z" fill="'+col+'"/></marker></defs>'+
-          '<line x1="'+x1+'" y1="'+y1+'" x2="'+el.x2+'" y2="'+el.y2+
-          '" stroke="'+col+'" stroke-width="'+(el.type==='shot'?2.5:2)+'"'+dash+
-          ' marker-end="url(#'+mid+')"/>';
-        break;
-      }
-    }
-  });
 
-  svg.innerHTML = html;
 
-  if(!svg._editBuilderBound){
-    svg._editBuilderBound = true;
-    svg.addEventListener('touchend',function(e){
-      e.preventDefault();
-      var r=svg.getBoundingClientRect();
-      var t=e.changedTouches[0];
-      handleEditBuilderClick(Math.round((t.clientX-r.left)*(vw/r.width)),Math.round((t.clientY-r.top)*(vh/r.height)));
-    },{passive:false});
-    svg.addEventListener('click',function(e){
-      if(e.sourceCapabilities&&e.sourceCapabilities.firesTouchEvents)return;
-      var r=svg.getBoundingClientRect();
-      handleEditBuilderClick(Math.round((e.clientX-r.left)*(vw/r.width)),Math.round((e.clientY-r.top)*(vh/r.height)));
-    });
-  }
-}
 
-function handleEditBuilderClick(x,y){
-  var hint=document.getElementById('editBuilderHint');
-  if(editBuilderTool==='erase'){
-    var minD=999,minI=-1;
-    editBuilderElements.forEach(function(el,i){
-      var ex=el.x!==undefined?el.x:((el.x1+el.x2)/2||0);
-      var ey=el.y!==undefined?el.y:((el.y1+el.y2)/2||0);
-      var d=Math.sqrt((ex-x)*(ex-x)+(ey-y)*(ey-y));
-      if(d<minD){minD=d;minI=i;}
-    });
-    if(minI>=0&&minD<25)editBuilderElements.splice(minI,1);
-    renderEditBuilderPitch();return;
-  }
-  if(['pass','run','shot'].indexOf(editBuilderTool)>=0){
-    if(!editBuilderRunStart){
-      editBuilderRunStart={x:x,y:y};
-      if(hint)hint.textContent='Tap end point for '+editBuilderTool+' arrow';
-    } else {
-      editBuilderElements.push({type:editBuilderTool,x1:editBuilderRunStart.x,y1:editBuilderRunStart.y,x2:x,y2:y});
-      editBuilderRunStart=null;
-      setEditTool(editBuilderTool);
-    }
-    renderEditBuilderPitch();return;
-  }
-  editBuilderPlayerCount++;
-  var label=editBuilderTool==='attacker'?('A'+editBuilderPlayerCount):editBuilderTool==='defender'?('D'+editBuilderPlayerCount):'GK';
-  editBuilderElements.push({type:editBuilderTool,x:x,y:y,label:label});
-  renderEditBuilderPitch();
-}
 
-function editBuilderUndo(){
-  if(editBuilderRunStart){editBuilderRunStart=null;renderEditBuilderPitch();return;}
-  if(editBuilderElements.length>0){editBuilderElements.pop();editBuilderPlayerCount=Math.max(0,editBuilderPlayerCount-1);}
-  renderEditBuilderPitch();
-}
 
-function clearEditDiagram(){
-  if(!confirm('Clear the diagram?'))return;
-  editBuilderElements=[];editBuilderPlayerCount=0;editBuilderRunStart=null;
-  renderEditBuilderPitch();
-}
 
-async function saveEditedSession(){
-  if(editSessionIndex<0||!userSessions[editSessionIndex])return;
-  var s=userSessions[editSessionIndex];
-  if(editSessionPhases.length>1&&editSessionPhases[editCurrentPhaseIdx])
-    editSessionPhases[editCurrentPhaseIdx].elements=editBuilderElements;
-  var savedEls=editBuilderElements;
-  if(editSessionPhases.length>1){
-    savedEls=[];
-    editSessionPhases.forEach(function(ph,i){
-      ph.elements.forEach(function(el){savedEls.push(Object.assign({_phase:i,_phaseLabel:ph.label},el));});
-    });
-  }
-  try{
-    var res=await sb.from('sessions').update({
-      elements:savedEls,diagram_vw:editDiagramVW,diagram_vh:editDiagramVH,
-      edited:true,updated_at:new Date().toISOString()
-    }).eq('id',s.id).select();
-    if(res.error)throw new Error(res.error.message);
-    Object.assign(s,{elements:savedEls,diagram_vw:editDiagramVW,diagram_vh:editDiagramVH,edited:true});
-    alert('Diagram saved!');
-    navigate('/history');
-  }catch(e){alert('Could not save: '+e.message);}
-}
+
+
+
+
+async 
 
 document.addEventListener('DOMContentLoaded',function(){
 (async()=>{
@@ -6049,48 +5714,6 @@ document.addEventListener('DOMContentLoaded',function(){
 <!-- ══════════ FITNESS SESSION GENERATOR ══════════ -->
 
 
-<!-- ══════════ EDIT SESSION (diagram only) ══════════ -->
-<div id="editSessionScreen" class="screen">
-  <div class="wrap">
-    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/history')">← Session History</button></div>
-    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;margin:0 0 2px">Edit <em>Session</em></h2>
-    <p id="editSessionSub" style="font-size:11px;color:var(--muted);margin:0 0 12px"></p>
-
-    <div class="edit-banner">
-      <div class="edit-banner-dot"></div>
-      <span>Editing — changes are not saved until you tap Save</span>
-    </div>
-
-    <div id="editPhaseSelectorWrap" style="display:none;margin-bottom:10px">
-      <div class="field-label" style="margin-top:0">Which Phase?</div>
-      <select id="editPhaseSelector" class="form-input" onchange="switchEditPhase(parseInt(this.value))" style="font-size:13px"></select>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
-      <button class="sp-tool-btn active" id="editToolAttacker" onclick="setEditTool('attacker')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🔵</span>Attacker</button>
-      <button class="sp-tool-btn" id="editToolDefender" onclick="setEditTool('defender')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🔴</span>Defender</button>
-      <button class="sp-tool-btn" id="editToolGk" onclick="setEditTool('gk')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">🟡</span>GK</button>
-      <button class="sp-tool-btn" id="editToolBall" onclick="setEditTool('ball')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">⚽</span>Ball</button>
-      <button class="sp-tool-btn" id="editToolPass" onclick="setEditTool('pass')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#00C2FF;display:block;margin:6px auto 2px"></span>Pass</button>
-      <button class="sp-tool-btn" id="editToolRun" onclick="setEditTool('run')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;border-top:3px dashed #FFD600;display:block;margin:6px auto 2px"></span>Run</button>
-      <button class="sp-tool-btn" id="editToolShot" onclick="setEditTool('shot')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="width:20px;height:3px;background:#FF4D6A;display:block;margin:6px auto 2px"></span>Shot</button>
-      <button class="sp-tool-btn" id="editToolErase" onclick="setEditTool('erase')" style="flex-direction:column;padding:8px 4px;font-size:11px"><span style="font-size:16px">✕</span>Erase</button>
-    </div>
-    <div id="editBuilderHint" style="font-size:11px;color:var(--accent);text-align:center;margin-bottom:6px;min-height:16px">Tap pitch to place attacker</div>
-    <div class="sp-builder-pitch" id="editBuilderPitch">
-      <svg id="editBuilderSvg" viewBox="0 0 200 280" style="width:100%;touch-action:none;cursor:crosshair;pointer-events:all;display:block"></svg>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="nav-btn" style="flex:1" onclick="editBuilderUndo()">↩ Undo</button>
-      <button class="nav-btn" style="flex:1" onclick="clearEditDiagram()">✕ Clear</button>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:18px">
-      <button class="btn" style="flex:1" onclick="saveEditedSession()">💾 Save Changes</button>
-      <button class="btn-ghost" style="flex:1" onclick="navigate('/history')">Cancel</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
