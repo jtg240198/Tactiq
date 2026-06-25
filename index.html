@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-24-ANIM-NOEDIT -->
+<!-- BUILD-2026-06-24-PLAY -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v24-ANIM</div>
+    <div class="land-badge">⚽ AI Football Coaching · v26-PLAY</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1391,7 +1391,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-24-ANIM-NOEDIT ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-24-PLAY ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -4876,41 +4876,26 @@ var _animState = {};
 var _animSpeed = 1.0;
 
 function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
-  // Resolve the SAME setup the diagram renderer uses (getPhaseDefaultDiagram path):
-  // 1) SESSION_SETUPS[sessionId].phases[i].setup  2) buildAndValidateDiagram from desc.
   var setup = null;
-
-  // Source 1: SESSION_SETUPS (authored diagrams with step data)
   if(sessionId && typeof SESSION_SETUPS !== 'undefined' && SESSION_SETUPS[sessionId]){
     var sd = SESSION_SETUPS[sessionId];
     if(sd.phases && sd.phases[phaseIdx] && sd.phases[phaseIdx].setup){
       setup = sd.phases[phaseIdx].setup;
     }
   }
-
-  // Source 2: template phase's own setup (rare)
-  if(!setup && pTmpl && pTmpl.setup && pTmpl.setup.elements){
-    setup = pTmpl.setup;
-  }
-
-  // Source 3: build the setup object directly from the phase description
+  if(!setup && pTmpl && pTmpl.setup && pTmpl.setup.elements){ setup = pTmpl.setup; }
   if(!setup && phase && phase.desc){
     setup = buildSetupObject(phase.desc, phase.phase || '', !!isTeam);
   }
-
   if(!setup || !setup.elements) return '';
   if(!setup.elements.some(function(e){ return !!e.step; })) return '';
 
-  var data = {elements:setup.elements, vw:setup.vw||220, vh:setup.vh||180};
-  var encoded;
-  try{ encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data)))); }
-  catch(e){ return ''; }
+  // Store the setup in a global registry keyed by phaseIdx — no encoding,
+  // no setTimeout, no data attributes. The Play button reads it directly.
+  if(typeof window._animRegistry === 'undefined') window._animRegistry = {};
+  window._animRegistry[phaseIdx] = {elements:setup.elements, vw:setup.vw||220, vh:setup.vh||180};
 
   var cid = 'animCtrl_'+phaseIdx;
-  setTimeout(function(){
-    var el=document.getElementById(cid); if(el) el.setAttribute('data-anim',encoded);
-  },0);
-
   return '<div id="'+cid+'" class="anim-controls">'+
     '<div class="anim-btns">'+
     '<button class="anim-btn anim-play" id="animPlayBtn_'+phaseIdx+'" onclick="_animBtnClick('+phaseIdx+',this)">&#9654; Play</button>'+
@@ -4925,18 +4910,17 @@ function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
     '</div>';
 }
 
+
 function _animBtnClick(phaseIdx, btn){
-  var el = document.getElementById('animCtrl_'+phaseIdx);
-  var encoded = el ? el.getAttribute('data-anim') : null;
-  if(!encoded) return;
-  animPlay(phaseIdx, encoded, btn);
+  var reg = window._animRegistry ? window._animRegistry[phaseIdx] : null;
+  if(!reg){ console.warn('[anim] no registry entry'); return; }
+  animPlay(phaseIdx, reg, btn);
 }
 
 function _animRestartBtn(phaseIdx){
-  var el = document.getElementById('animCtrl_'+phaseIdx);
-  var encoded = el ? el.getAttribute('data-anim') : null;
-  if(!encoded) return;
-  animRestart(phaseIdx, encoded);
+  var reg = window._animRegistry ? window._animRegistry[phaseIdx] : null;
+  if(!reg) return;
+  animRestart(phaseIdx, reg);
 }
 
 function animSetSpeed(phaseIdx, speed){
@@ -4998,25 +4982,22 @@ function _animResume(phaseIdx, btn){
   state.raf = requestAnimationFrame(function(ts){ _animTick(phaseIdx, ts); });
 }
 
-function _animStart(phaseIdx, encoded, btn){
-  // Decode data
-  var data;
-  try{ data = JSON.parse(decodeURIComponent(escape(atob(encoded)))); }
-  catch(e){ console.error('animStart decode error', e); return; }
-
+function _animStart(phaseIdx, data, btn){
+  if(!data || !data.elements){ console.warn('[anim] no data'); return; }
   var elements = data.elements;
   var vw = data.vw, vh = data.vh;
 
   // Find the SVG element inside the diagram-wrap for this phase
   var wrap = document.getElementById('animCtrl_'+phaseIdx);
-  if(!wrap) return;
+  if(!wrap){ console.error('[anim] no control wrap for phase', phaseIdx); return; }
   var diagramWrap = wrap.parentElement;
   var svgEl = diagramWrap ? diagramWrap.querySelector('svg') : null;
-  if(!svgEl) return;
+  if(!svgEl){ console.error('[anim] no SVG found'); return; }
 
   // Build timeline: one step entry per unique step number
   var steps = _buildTimeline(elements, vw, vh);
-  if(!steps.length){ console.warn('No animated steps found'); return; }
+  console.log('[anim] phase', phaseIdx, '— steps:', steps.length, 'elements:', elements.length);
+  if(!steps.length){ console.warn('[anim] no steps'); return; }
 
   // Snapshot the original SVG inner markup before we modify it
   var origSvgHtml = svgEl.innerHTML;
