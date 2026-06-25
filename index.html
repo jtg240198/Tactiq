@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-24-PLAY -->
+<!-- BUILD-2026-06-24-DBG -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v26-PLAY</div>
+    <div class="land-badge">⚽ AI Football Coaching · v27-DBG</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1391,7 +1391,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-24-PLAY ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-24-DBG ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -4913,7 +4913,8 @@ function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
 
 function _animBtnClick(phaseIdx, btn){
   var reg = window._animRegistry ? window._animRegistry[phaseIdx] : null;
-  if(!reg){ console.warn('[anim] no registry entry'); return; }
+  if(!reg){ alert('STOP 1: no registry for phase '+phaseIdx+' (registry keys: '+(window._animRegistry?Object.keys(window._animRegistry).join(','):'none')+')'); return; }
+  alert('OK 1: registry found, '+reg.elements.length+' elements. Starting...');
   animPlay(phaseIdx, reg, btn);
 }
 
@@ -4983,21 +4984,19 @@ function _animResume(phaseIdx, btn){
 }
 
 function _animStart(phaseIdx, data, btn){
-  if(!data || !data.elements){ console.warn('[anim] no data'); return; }
+  if(!data || !data.elements){ alert('STOP 2: no data'); return; }
   var elements = data.elements;
   var vw = data.vw, vh = data.vh;
 
-  // Find the SVG element inside the diagram-wrap for this phase
   var wrap = document.getElementById('animCtrl_'+phaseIdx);
-  if(!wrap){ console.error('[anim] no control wrap for phase', phaseIdx); return; }
+  if(!wrap){ alert('STOP 3: no control wrap'); return; }
   var diagramWrap = wrap.parentElement;
   var svgEl = diagramWrap ? diagramWrap.querySelector('svg') : null;
-  if(!svgEl){ console.error('[anim] no SVG found'); return; }
+  if(!svgEl){ alert('STOP 4: no SVG found in parent. Parent class: '+(diagramWrap?diagramWrap.className:'null')); return; }
 
-  // Build timeline: one step entry per unique step number
   var steps = _buildTimeline(elements, vw, vh);
-  console.log('[anim] phase', phaseIdx, '— steps:', steps.length, 'elements:', elements.length);
-  if(!steps.length){ console.warn('[anim] no steps'); return; }
+  if(!steps.length){ alert('STOP 5: timeline built 0 steps'); return; }
+  alert('OK 2: SVG found, '+steps.length+' steps. Animating now!');
 
   // Snapshot the original SVG inner markup before we modify it
   var origSvgHtml = svgEl.innerHTML;
