@@ -2362,8 +2362,15 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
   // Action sequence — step numbers drive animation playback order.
   // stepCircle() returns '' so these never show as visible numbers.
   var seq = 1;
+  var goalX = Math.round(vw/2), goalY = 20;
 
-  // Pass chain (executes first, in order)
+  // Cool Down phases are stretching/jogging, never tactical sequences — keep static.
+  var phaseLower = (parsed.phaseName||'').toLowerCase();
+  var isCoolDown = phaseLower.indexOf('cool') >= 0 || phaseLower.indexOf('recovery') >= 0 ||
+                   phaseLower.indexOf('stretch') >= 0;
+  if(isCoolDown) return elements;
+
+  // Multi-player pass chain (executes first, in order)
   if(parsed.hasPass && attackerEls.length >= 2){
     for(let i=0;i<Math.min(attackerEls.length-1,2);i++){
       elements.push({type:'pass',
@@ -2372,21 +2379,37 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
     }
   }
 
-  // Dribble for solo
-  if(parsed.hasDribble && parsed.attackers === 1){
-    elements.push({type:'dribble',x1:a0.x,y1:a0.y-12,x2:a0.x,y2:Math.round(vh*0.25),step:seq++});
+  // Dribble — explicit dribble intent, or a solo player who also passes/shoots
+  if(parsed.hasDribble || (parsed.attackers === 1 && (parsed.hasShoot || parsed.hasDribble) && attackerEls.length >= 1)){
+    elements.push({type:'dribble',x1:a0.x,y1:a0.y-12,x2:a0.x,y2:Math.round(vh*0.35),step:seq++});
   }
 
-  // Supporting run (happens alongside/after passes)
+  // Supporting run (2+ players)
   if(parsed.hasRun && attackerEls.length >= 2){
     const a1 = attackerEls[Math.min(1,attackerEls.length-1)];
     elements.push({type:'run',x1:a1.x,y1:a1.y,x2:a1.x,y2:Math.round(vh*0.2),step:seq++});
   }
 
-  // Shot — always the final action in the sequence
+  // Shot — final action when shooting intent exists
   if(parsed.hasShoot){
     const last = attackerEls[attackerEls.length-1];
-    elements.push({type:'shot',x1:last.x,y1:last.y,x2:Math.round(vw/2),y2:20,step:seq++});
+    var shotFromX = (parsed.attackers===1 && seq>1) ? a0.x : last.x;
+    var shotFromY = (parsed.attackers===1 && seq>1) ? Math.round(vh*0.35) : last.y;
+    elements.push({type:'shot',x1:shotFromX,y1:shotFromY,x2:goalX,y2:goalY,step:seq++});
+  }
+
+  // FALLBACK: if the phase has action intent but produced no animated steps
+  // (e.g. a 1-player passing drill), create a simple demonstrative sequence
+  // so the animation is always available where it makes sense.
+  if(seq === 1 && (parsed.hasPass || parsed.hasRun || parsed.hasShoot || parsed.hasDribble)){
+    if(parsed.hasPass && attackerEls.length >= 1){
+      // Player passes toward goal/target then the ball returns (wall pass feel)
+      var tx = a0.x, ty = Math.round(vh*0.35);
+      elements.push({type:'pass',x1:a0.x,y1:a0.y,x2:tx,y2:ty,step:seq++});
+    }
+    if(attackerEls.length >= 1){
+      elements.push({type:'run',x1:a0.x,y1:a0.y,x2:a0.x,y2:Math.round(vh*0.3),step:seq++});
+    }
   }
 
   return elements;
