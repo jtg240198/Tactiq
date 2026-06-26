@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v27-DBG</div>
+    <div class="land-badge">⚽ AI Football Coaching · v28-DBG</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -4933,16 +4933,16 @@ function animSetSpeed(phaseIdx, speed){
 function animPlay(phaseIdx, encoded, btn){
   var state = _animState[phaseIdx];
   if(state && state.playing){
-    // Pause
+    alert('BRANCH: pausing (was playing)');
     _animPause(phaseIdx, btn);
     return;
   }
   if(state && state.paused){
-    // Resume
+    alert('BRANCH: resuming (was paused)');
     _animResume(phaseIdx, btn);
     return;
   }
-  // Fresh start
+  alert('BRANCH: fresh start -> calling _animStart');
   _animStart(phaseIdx, encoded, btn);
 }
 
