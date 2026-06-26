@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-24-v31 -->
+<!-- BUILD-2026-06-26-v32 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v31</div>
+    <div class="land-badge">⚽ AI Football Coaching · v32</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1391,7 +1391,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-24-v31 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-26-v32 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -2085,6 +2085,11 @@ function parsePractice(desc, phaseName) {
   const hasCross   = /\bnear.?post|far.?post|byline|delivery|deliver|pull.?back|cutback|inswing|outswing/.test(d) || /\bcross(?:es|ed|ing)?\s+(?:to|into|the|from)/.test(d);
   const hasGKBuild = /from gk|gk distribut|goalkeeper.*pass|gk.*pass|play.*back|build.*back/.test(d);
   const isWide     = /wide|flank|touchline|winger/.test(d);
+  // Corner detection — a corner is a specific kind of crossing drill where the
+  // taker MUST be at the corner arc on the attacking byline, not deep in the half.
+  const pn         = (phaseName||'').toLowerCase();
+  const isCorner   = /corner/.test(d) || /corner/.test(pn);
+  const cornerSide = /right/.test(d) || /right/.test(pn) ? 'right' : 'left';
 
   // ── Roles array ────────────────────────────────────────────
   const roles = [];
@@ -2116,6 +2121,7 @@ function parsePractice(desc, phaseName) {
     areaW, areaH, pitchType,
     hasPass, hasDribble, hasRun, hasShoot,
     hasCross, hasGKBuild, isWide,
+    isCorner, cornerSide,
     roles, phaseName,
     totalPlayers: attackers + defenders + neutrals + gk,
   };
@@ -2303,9 +2309,39 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
   const gkEls       = players.filter(p=>p.type==='gk');
   const M = 18;
 
-  // ── CROSSING DRILL ──────────────────────────────────────────
+  // ── CROSSING / CORNER DRILL ─────────────────────────────────
   if(parsed.hasCross){
-    // Player on byline (left side)
+    const goalX = Math.round(vw/2), goalY = M+18;
+    const nearPost = Math.round(vw/2)-14, farPost = Math.round(vw/2)+14;
+
+    // ── CORNER: taker stands AT the corner arc on the attacking byline ──
+    // The goal and penalty box sit at the TOP of the half-pitch, so the corner
+    // is top-left (default) or top-right by side. Deliveries fan from the corner
+    // INTO the box — never from the opposite half (the old bug).
+    if(parsed.isCorner){
+      const leftSide = parsed.cornerSide !== 'right';
+      const cX = leftSide ? (M+6) : (vw-M-6);
+      const cY = M + 8;                          // on the top byline, at the flag
+      if(attackerEls.length === 1){
+        attackerEls[0].x = cX; attackerEls[0].y = cY; attackerEls[0].label = 'C';
+      }
+      // Ball just inside the corner arc, beside the taker
+      elements.push({type:'ball', x:(leftSide ? cX+7 : cX-7), y:cY+5});
+      // Three delivery options out of the corner
+      elements.push({type:'pass',x1:cX,y1:cY+3,x2:nearPost,y2:goalY+12,step:1}); // near post
+      elements.push({type:'pass',x1:cX,y1:cY+3,x2:farPost, y2:goalY+18,step:2}); // far post
+      elements.push({type:'pass',x1:cX,y1:cY+3,x2:goalX,   y2:Math.round(vh*0.34),step:3}); // short / pull-back
+      elements.push({type:'label',x:goalX,y:Math.round(vh*0.5),
+        text:'1=Near  2=Far  3=Short',size:6.5,color:'rgba(0,194,255,0.6)'});
+      // Box runners (team sessions): near & far post arrivals
+      if(attackerEls.length <= 1 && isTeam){
+        elements.push({type:'attacker',x:nearPost,y:Math.round(vh*0.34),label:'S1'});
+        elements.push({type:'attacker',x:farPost, y:Math.round(vh*0.40),label:'S2'});
+      }
+      return elements;
+    }
+
+    // ── OPEN-PLAY CROSS: winger delivers from the byline channel ──
     const byX = M+12, byY = Math.round(vh*0.8);
     if(attackerEls.length === 1){
       // Reposition solo player to byline
@@ -2313,8 +2349,6 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
       attackerEls[0].y = byY;
       attackerEls[0].label = 'W';
     }
-    const goalX = Math.round(vw/2), goalY = M+18;
-    const nearPost = Math.round(vw/2)-14, farPost = Math.round(vw/2)+14;
     const boxEdge = Math.round(vh*0.32);
     // Ball at byline
     elements.push({type:'ball',x:byX+8,y:byY-8});
@@ -5033,17 +5067,15 @@ function _buildTimeline(elements, vw, vh){
       if(dur > stepDur) stepDur = dur;
 
       if(el.type==='pass'){
-        // Find nearest player to start point — they carry the ball
-        var nearest = _nearestPlayer(el.x1, el.y1, elements, playerPositions);
-        stepActions.push({
-          action:'move_player', label:nearest, x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2,
-          dur:dur, arrowEl:el
-        });
+        // A pass moves ONLY the ball. The passer stays where they are and only
+        // moves if they have their own separate 'run' element (pass-and-move).
+        // Previously this also dragged the nearest player along the pass line,
+        // which is why the passer appeared to "follow the pass" instead of
+        // following their run.
         stepActions.push({
           action:'move_ball', x1:el.x1, y1:el.y1, x2:el.x2, y2:el.y2, dur:dur
         });
-        // Update position map for next step
-        if(nearest) playerPositions[nearest] = {x:el.x2, y:el.y2};
+        // Only the ball's position advances for the next step — players do not.
         playerPositions['__ball__'] = {x:el.x2, y:el.y2};
       } else if(el.type==='dribble'){
         var nearest = _nearestPlayer(el.x1, el.y1, elements, playerPositions);
