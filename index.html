@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v28-DBG</div>
+    <div class="land-badge">⚽ AI Football Coaching · v29-DBG</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -4873,6 +4873,16 @@ async
 
 // ── PUBLIC API ─────────────────────────────────────────────────────────────
 var _animState = {};
+function _dbg(msg){
+  var d = document.getElementById('_animDbg');
+  if(!d){
+    d = document.createElement('div');
+    d.id = '_animDbg';
+    d.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.9);color:#0f0;font-size:11px;font-family:monospace;padding:6px;z-index:99999;max-height:40%;overflow:auto;white-space:pre-wrap';
+    document.body.appendChild(d);
+  }
+  d.textContent += msg + '\n';
+}
 var _animSpeed = 1.0;
 
 function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
@@ -4913,8 +4923,8 @@ function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
 
 function _animBtnClick(phaseIdx, btn){
   var reg = window._animRegistry ? window._animRegistry[phaseIdx] : null;
-  if(!reg){ alert('STOP 1: no registry for phase '+phaseIdx+' (registry keys: '+(window._animRegistry?Object.keys(window._animRegistry).join(','):'none')+')'); return; }
-  alert('OK 1: registry found, '+reg.elements.length+' elements. Starting...');
+  if(!reg){ _dbg('STOP1: no registry. keys='+(window._animRegistry?Object.keys(window._animRegistry).join(','):'none')); return; }
+  _dbg('1. registry OK: '+reg.elements.length+' elements');
   animPlay(phaseIdx, reg, btn);
 }
 
@@ -4933,16 +4943,16 @@ function animSetSpeed(phaseIdx, speed){
 function animPlay(phaseIdx, encoded, btn){
   var state = _animState[phaseIdx];
   if(state && state.playing){
-    alert('BRANCH: pausing (was playing)');
+    _dbg('2. branch: PAUSE');
     _animPause(phaseIdx, btn);
     return;
   }
   if(state && state.paused){
-    alert('BRANCH: resuming (was paused)');
+    _dbg('2. branch: RESUME');
     _animResume(phaseIdx, btn);
     return;
   }
-  alert('BRANCH: fresh start -> calling _animStart');
+  _dbg('2. branch: FRESH START');
   _animStart(phaseIdx, encoded, btn);
 }
 
@@ -4984,19 +4994,19 @@ function _animResume(phaseIdx, btn){
 }
 
 function _animStart(phaseIdx, data, btn){
-  if(!data || !data.elements){ alert('STOP 2: no data'); return; }
+  if(!data || !data.elements){ _dbg('STOP2: no data'); return; }
   var elements = data.elements;
   var vw = data.vw, vh = data.vh;
 
   var wrap = document.getElementById('animCtrl_'+phaseIdx);
-  if(!wrap){ alert('STOP 3: no control wrap'); return; }
+  if(!wrap){ _dbg('STOP3: no wrap'); return; }
   var diagramWrap = wrap.parentElement;
   var svgEl = diagramWrap ? diagramWrap.querySelector('svg') : null;
-  if(!svgEl){ alert('STOP 4: no SVG found in parent. Parent class: '+(diagramWrap?diagramWrap.className:'null')); return; }
+  if(!svgEl){ _dbg('STOP4: no SVG. parent='+(diagramWrap?diagramWrap.className:'null')); return; }
 
   var steps = _buildTimeline(elements, vw, vh);
-  if(!steps.length){ alert('STOP 5: timeline built 0 steps'); return; }
-  alert('OK 2: SVG found, '+steps.length+' steps. Animating now!');
+  if(!steps.length){ _dbg('STOP5: 0 steps'); return; }
+  _dbg('3. SVG found, '+steps.length+' steps. STARTING RAF');
 
   // Snapshot the original SVG inner markup before we modify it
   var origSvgHtml = svgEl.innerHTML;
@@ -5221,6 +5231,7 @@ function _arrowHead(x1,y1,x2,y2,col,sw){
 function _animTick(phaseIdx, ts){
   var state = _animState[phaseIdx];
   if(!state || !state.playing) return;
+  if(!state._tickLogged){ _dbg('4. first tick fired, animating'); state._tickLogged=true; }
   if(state.stepStart === null) state.stepStart = ts;
   var speed = state.speed || _animSpeed || 1.0;
   var elapsed = (ts - state.stepStart) * speed;
