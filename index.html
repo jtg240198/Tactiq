@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v29-DBG</div>
+    <div class="land-badge">⚽ AI Football Coaching · v30-DBG</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -4925,7 +4925,11 @@ function _animBtnClick(phaseIdx, btn){
   var reg = window._animRegistry ? window._animRegistry[phaseIdx] : null;
   if(!reg){ _dbg('STOP1: no registry. keys='+(window._animRegistry?Object.keys(window._animRegistry).join(','):'none')); return; }
   _dbg('1. registry OK: '+reg.elements.length+' elements');
-  animPlay(phaseIdx, reg, btn);
+  try{
+    animPlay(phaseIdx, reg, btn);
+  }catch(e){
+    _dbg('EXCEPTION in animPlay: '+e.message);
+  }
 }
 
 function _animRestartBtn(phaseIdx){
@@ -4941,7 +4945,9 @@ function animSetSpeed(phaseIdx, speed){
 }
 
 function animPlay(phaseIdx, encoded, btn){
+  _dbg('1b. animPlay entered, phaseIdx='+phaseIdx+' typeof _animState='+(typeof _animState));
   var state = _animState[phaseIdx];
+  _dbg('1c. read state OK');
   if(state && state.playing){
     _dbg('2. branch: PAUSE');
     _animPause(phaseIdx, btn);
