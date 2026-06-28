@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v37 -->
+<!-- BUILD-2026-06-28-v38 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -337,6 +337,14 @@ body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,
 .sp-hub-desc{font-size:12px;color:var(--muted);line-height:1.5}
 .sp-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px}
 .sp-tab{padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;touch-action:manipulation;transition:all .15s}
+.se-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px}
+.se-tab{padding:7px 12px;border-radius:18px;border:1.5px solid var(--border);background:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;touch-action:manipulation;transition:all .15s;flex-shrink:0}
+.se-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,194,255,0.08)}
+.se-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.se-tool{padding:7px 10px;border-radius:9px;border:1.5px solid var(--border);background:rgba(10,37,64,0.6);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;transition:all .15s}
+.se-tool.active{border-color:var(--accent);color:var(--accent);background:rgba(0,194,255,0.12)}
+.se-canvas{background:#0d3320;border:1px solid var(--border);border-radius:10px;padding:6px;touch-action:manipulation;user-select:none}
+.se-canvas svg{touch-action:manipulation}
 .sp-tab.active{background:var(--accent);border-color:var(--accent);color:#000}
 .sp-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden}
 .sp-card-header{padding:14px 16px;border-bottom:1px solid var(--border)}
@@ -523,7 +531,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v37</div>
+    <div class="land-badge">⚽ AI Football Coaching · v38</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -981,8 +989,19 @@ fbq('track','PageView');
     <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="showScreen('dashboardScreen')">Dashboard</button></div>
     <button class="back-btn" onclick="showScreen('dashboardScreen')">← Back to Dashboard</button>
     <div id="sessionContent"></div>
+    <button class="btn-ghost" id="editSessionBtn" style="width:100%;margin-bottom:8px" onclick="openSessionEditor()">✏️ Edit Session &amp; Diagrams</button>
     <button class="pdf-btn" id="pdfBtn" onclick="exportPDF()">📄 Export as PDF</button>
     <button class="btn-ghost" onclick="tryStartSession()">Build Another Session</button>
+  </div>
+</div>
+
+<!-- ══════════ SESSION EDITOR ══════════ -->
+<div id="sessionEditorScreen" class="screen">
+  <div class="wrap">
+    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="closeSessionEditor()">← Back</button></div>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 4px">Edit <em>Session</em></h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 14px">Edit the text and the diagram rebuilds from it — or fine-tune by tapping the pitch.</p>
+    <div id="sessionEditorContent"></div>
   </div>
 </div>
 
@@ -1391,7 +1410,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v37 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v38 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -4293,6 +4312,22 @@ function getPhaseDefaultDiagram(sessionId, phaseIndex, phaseName, isTeam, desc){
 }
 
 
+// Render a free-form list of edited diagram elements. Elements may carry an
+// internal _phase tag and an optional {type:'_meta',vw,vh,pitchType} entry that
+// records the pitch the edit was made on. Falls back to a half pitch.
+function renderEditedDiagramSVG(els){
+  if(!Array.isArray(els) || !els.length) return '';
+  var meta = els.find(function(e){ return e.type==='_meta'; });
+  var elements = els.filter(function(e){ return e.type!=='_meta'; })
+                    .map(function(e){ var c=Object.assign({},e); delete c._phase; return c; });
+  if(!elements.length) return '';
+  return renderSetupDiagram({
+    pitchType:(meta&&meta.pitchType)||'half',
+    vw:(meta&&meta.vw)||280, vh:(meta&&meta.vh)||200,
+    elements:elements
+  });
+}
+
 function renderSessionContent(s){
   const ic=INT_COLS[s.intensity]||'#FFB300';
   const phases=Array.isArray(s.phases)?s.phases:[];
@@ -4331,7 +4366,11 @@ function renderSessionContent(s){
       // Pass the phase desc so the diagram engine can parse it
       const phaseDesc=p.desc||'';
       let pDiag=null;
-      if(editedElsHaveTags){
+      // A user-edited phase stores its own diagram in p.setup — render that first.
+      if(p.setup && p.setup.elements && p.setup.elements.length){
+        pDiag=renderSetupDiagram(p.setup);
+      }
+      if(!pDiag && editedElsHaveTags){
         const thisPhaseEls=s.elements.filter(e=>e._phase===i);
         if(thisPhaseEls.length) pDiag=renderEditedDiagramSVG(thisPhaseEls);
       }
@@ -4354,6 +4393,228 @@ function renderSessionContent(s){
 }
 
 
+// ══════════════════════════════════════════════════════════════════
+// SESSION EDITOR — edit text (diagram auto-regenerates) + manual tap-to-place
+// ══════════════════════════════════════════════════════════════════
+var SE = null; // { session, idx, phase, tool, runStart, moveSel, setups:{} }
+
+function sessionEditKey(s){ return 'tactiq_edit_'+(s.id||s.sessionId||s.title||'session'); }
+
+// Merge any locally-saved edits (text + per-phase diagrams) onto a session.
+function applySessionEditOverlay(s){
+  try{
+    var raw = localStorage.getItem(sessionEditKey(s));
+    if(!raw) return;
+    var ov = JSON.parse(raw);
+    if(ov.title) s.title = ov.title;
+    if(ov.overview) s.overview = ov.overview;
+    if(Array.isArray(ov.phases) && Array.isArray(s.phases)){
+      ov.phases.forEach(function(op, i){
+        if(!s.phases[i]) return;
+        if(op.title!=null) s.phases[i].title = op.title;
+        if(op.desc!=null)  s.phases[i].desc  = op.desc;
+        if(op.setup)       s.phases[i].setup = op.setup;
+      });
+    }
+    s.edited = true;
+  }catch(e){}
+}
+
+// Open the editor for the session currently being viewed.
+function openSessionEditor(){
+  if(!currentSession){ return; }
+  var clone = JSON.parse(JSON.stringify(currentSession)); // Cancel discards changes
+  SE = { session:clone, idx:(currentSession._idx!=null?currentSession._idx:-1),
+         phase:0, tool:'move', runStart:null, moveSel:-1, setups:{} };
+  var phases = Array.isArray(clone.phases)?clone.phases:[];
+  phases.forEach(function(p,i){ SE.setups[i] = seSeedSetup(p, i); });
+  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('sessionEditorScreen').classList.add('active');
+  renderSessionEditor();
+  window.scrollTo(0,0);
+}
+
+// Get the working setup for a phase — its saved custom one, or auto-built.
+function seSeedSetup(phase, i){
+  if(phase && phase.setup && phase.setup.elements){
+    return JSON.parse(JSON.stringify(phase.setup));
+  }
+  var built = buildSetupObject(phase&&phase.desc?phase.desc:'', phase&&phase.phase?phase.phase:'', !!SE.session.isTeam);
+  if(!built) built = {pitchType:'half',vw:280,vh:200,elements:[]};
+  return { pitchType:built.pitchType, vw:built.vw, vh:built.vh, elements:built.elements||[] };
+}
+
+function renderSessionEditor(){
+  var s = SE.session;
+  var phases = Array.isArray(s.phases)?s.phases:[];
+  var p = phases[SE.phase] || {phase:'',title:'',desc:''};
+  var tabs = phases.map(function(ph,i){
+    return '<button class="se-tab'+(i===SE.phase?' active':'')+'" onclick="seTab('+i+')">'+(ph.phase||('Phase '+(i+1)))+'</button>';
+  }).join('');
+  var tools = [['move','✋ Move'],['attacker','🔵 Att'],['defender','🔴 Def'],['gk','🟡 GK'],['ball','⚪ Ball'],
+               ['pass','→ Pass'],['run','⇢ Run'],['shot','➤ Shot'],['dribble','∿ Drib'],['erase','⌫ Erase']];
+  var toolBtns = tools.map(function(t){
+    return '<button class="se-tool'+(SE.tool===t[0]?' active':'')+'" onclick="seSetTool(\''+t[0]+'\')">'+t[1]+'</button>';
+  }).join('');
+  document.getElementById('sessionEditorContent').innerHTML =
+    '<div class="form-group"><label class="form-label">Session Title</label>'+
+      '<input class="form-input" id="seTitle" value="'+escAttr(s.title||'')+'" oninput="SE.session.title=this.value"/></div>'+
+    '<div class="form-group"><label class="form-label">Overview</label>'+
+      '<textarea class="form-input" id="seOverview" rows="2" style="resize:none" oninput="SE.session.overview=this.value">'+escHtml(s.overview||'')+'</textarea></div>'+
+    '<div class="se-tabs">'+tabs+'</div>'+
+    '<div class="form-group" style="margin-top:10px"><label class="form-label">Phase Title</label>'+
+      '<input class="form-input" id="sePhaseTitle" value="'+escAttr(p.title||'')+'" oninput="SE.session.phases['+SE.phase+'].title=this.value"/></div>'+
+    '<div class="form-group"><label class="form-label">Description (the diagram builds from this)</label>'+
+      '<textarea class="form-input" id="sePhaseDesc" rows="3" style="resize:none" oninput="SE.session.phases['+SE.phase+'].desc=this.value">'+escHtml(p.desc||'')+'</textarea></div>'+
+    '<button class="btn-ghost" style="width:100%;margin-bottom:6px" onclick="seRegenerate()">↻ Rebuild diagram from description</button>'+
+    '<div id="seHint" style="font-size:11px;color:var(--accent);text-align:center;margin:4px 0;min-height:15px">Pick a tool, then tap the pitch</div>'+
+    '<div class="se-toolbar">'+toolBtns+'</div>'+
+    '<div id="seCanvas" class="se-canvas"></div>'+
+    '<button class="btn-ghost" style="width:100%;margin-top:8px" onclick="seResetPhase()">⟲ Reset this phase to auto</button>'+
+    '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="btn" style="flex:1" onclick="seSave()">💾 Save Changes</button>'+
+      '<button class="btn-ghost" style="flex:1" onclick="closeSessionEditor()">Cancel</button>'+
+    '</div>';
+  seRenderCanvas();
+}
+
+function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(t){ return String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function seTab(i){ SE.phase=i; SE.runStart=null; SE.moveSel=-1; renderSessionEditor(); }
+function seSetTool(t){ SE.tool=t; SE.runStart=null; SE.moveSel=-1;
+  var hint=document.getElementById('seHint');
+  if(hint) hint.textContent = t==='move'?'Tap a player/ball, then tap where to move it':
+    t==='erase'?'Tap an element to delete it':
+    (t==='pass'||t==='run'||t==='shot'||t==='dribble')?'Tap start, then tap end of the arrow':
+    'Tap the pitch to place';
+  var tools=['move','attacker','defender','gk','ball','pass','run','shot','dribble','erase'];
+  document.querySelectorAll('.se-tool').forEach(function(b,i){ b.classList.toggle('active', tools[i]===SE.tool); });
+}
+
+function seRenderCanvas(){
+  var setup = SE.setups[SE.phase];
+  var host = document.getElementById('seCanvas');
+  if(!host||!setup) return;
+  host.innerHTML = renderSetupDiagram(setup);
+  var svg = host.querySelector('svg');
+  if(!svg) return;
+  if(SE.tool==='move' && SE.moveSel>=0){
+    var el=setup.elements[SE.moveSel];
+    if(el && el.x!=null){
+      var ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      ring.setAttribute('cx',el.x); ring.setAttribute('cy',el.y); ring.setAttribute('r','13');
+      ring.setAttribute('fill','none'); ring.setAttribute('stroke','#fff'); ring.setAttribute('stroke-width','1.5'); ring.setAttribute('stroke-dasharray','3,2');
+      svg.appendChild(ring);
+    }
+  }
+  if(!svg._seBound){
+    svg._seBound=true;
+    function tap(e){
+      e.preventDefault();
+      var st=SE.setups[SE.phase]; if(!st) return;
+      var r=svg.getBoundingClientRect();
+      var cx=e.changedTouches?e.changedTouches[0].clientX:e.clientX;
+      var cy=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+      var x=Math.round((cx-r.left)*(st.vw/r.width));
+      var y=Math.round((cy-r.top)*(st.vh/r.height));
+      seCanvasTap(x,y);
+    }
+    svg.addEventListener('click',tap,false);
+    svg.addEventListener('touchend',tap,{passive:false});
+  }
+}
+
+function seNearestIdx(els,x,y,pointOnly){
+  var best=999,bi=-1;
+  els.forEach(function(el,i){
+    var ex,ey;
+    if(el.x!=null){ ex=el.x; ey=el.y; }
+    else if(el.x1!=null){ if(pointOnly) return; ex=(el.x1+el.x2)/2; ey=(el.y1+el.y2)/2; }
+    else return;
+    var d=Math.hypot(ex-x,ey-y);
+    if(d<best){ best=d; bi=i; }
+  });
+  return best<22?bi:-1;
+}
+
+function seCanvasTap(x,y){
+  var st=SE.setups[SE.phase];
+  var els=st.elements;
+  var tool=SE.tool;
+  if(tool==='erase'){
+    var ei=seNearestIdx(els,x,y,false);
+    if(ei>=0) els.splice(ei,1);
+    seRenderCanvas(); return;
+  }
+  if(tool==='move'){
+    if(SE.moveSel<0){ SE.moveSel=seNearestIdx(els,x,y,true); }
+    else { if(els[SE.moveSel]){ els[SE.moveSel].x=x; els[SE.moveSel].y=y; } SE.moveSel=-1; }
+    seRenderCanvas(); return;
+  }
+  if(tool==='pass'||tool==='run'||tool==='shot'||tool==='dribble'){
+    if(!SE.runStart){ SE.runStart={x:x,y:y}; var h=document.getElementById('seHint'); if(h)h.textContent='Tap the end point'; }
+    else { els.push({type:tool,x1:SE.runStart.x,y1:SE.runStart.y,x2:x,y2:y,step:seNextStep(els)}); SE.runStart=null;
+      var h2=document.getElementById('seHint'); if(h2)h2.textContent='Arrow added'; }
+    seRenderCanvas(); return;
+  }
+  if(tool==='ball'){
+    st.elements = els.filter(function(e){return e.type!=='ball';}); // one ball only
+    st.elements.push({type:'ball',x:x,y:y});
+  } else {
+    var pre = tool==='attacker'?'A':tool==='defender'?'D':tool==='gk'?'GK':'N';
+    var n = els.filter(function(e){return e.type===tool;}).length+1;
+    els.push({type:tool,x:x,y:y,label: tool==='gk'?'GK':(pre+n)});
+  }
+  seRenderCanvas();
+}
+
+function seNextStep(els){
+  var max=0; els.forEach(function(e){ if(e.step&&e.step>max) max=e.step; });
+  return max+1;
+}
+
+// Rebuild the current phase diagram from its (edited) description.
+function seRegenerate(){
+  var p=SE.session.phases[SE.phase];
+  var built=buildSetupObject(p.desc||'', p.phase||'', !!SE.session.isTeam);
+  if(!built){ alert('Could not build a diagram from that description.'); return; }
+  SE.setups[SE.phase]={pitchType:built.pitchType,vw:built.vw,vh:built.vh,elements:built.elements||[]};
+  SE.runStart=null; SE.moveSel=-1;
+  seRenderCanvas();
+}
+function seResetPhase(){ seRegenerate(); }
+
+async function seSave(){
+  var s=SE.session;
+  (s.phases||[]).forEach(function(p,i){ if(SE.setups[i]) p.setup = SE.setups[i]; });
+  s.edited=true;
+  currentSession = Object.assign({}, s, {_idx: SE.idx});
+  if(SE.idx>=0 && userSessions[SE.idx]) userSessions[SE.idx] = Object.assign({}, userSessions[SE.idx], {
+    title:s.title, overview:s.overview, phases:s.phases, edited:true
+  });
+  try{
+    localStorage.setItem(sessionEditKey(s), JSON.stringify({title:s.title,overview:s.overview,
+      phases:(s.phases||[]).map(function(p){return {title:p.title,desc:p.desc,setup:p.setup||null};})}));
+  }catch(e){}
+  if(s.id && typeof sb!=='undefined' && sb){
+    try{
+      var res=await sb.from('sessions').update({title:s.title,overview:s.overview,phases:s.phases}).eq('id',s.id);
+      if(res && res.error) console.warn('Session DB update failed (kept locally):',res.error.message);
+    }catch(e){ console.warn('Session DB update threw (kept locally):',e); }
+  }
+  closeSessionEditor();
+  alert('Session updated.');
+}
+
+function closeSessionEditor(){
+  SE=null;
+  if(currentSession) renderSessionContent(currentSession);
+  showScreen('sessionScreen');
+  window.scrollTo(0,0);
+}
+
+
 function viewSession(i, fromHistory){
   const s=userSessions[i];
   currentSession={
@@ -4362,6 +4623,8 @@ function viewSession(i, fromHistory){
     isTeam:s.is_team||s.isTeam||false,
     diagram:null
   };
+  applySessionEditOverlay(currentSession);
+  currentSession._idx=i;
   renderSessionContent(currentSession);
   document.getElementById('pdfBtn').style.display=(userPlan!=='free')?'flex':'none';
   // Update back button destination based on where we came from
@@ -4830,6 +5093,29 @@ async function runAiAssistant(){
   }catch(e){err.textContent='Could not generate session. Please try again.';err.style.display='block';}
   btn.textContent='Generate Session';btn.disabled=false;
 }
+
+// Toggle the freshly-built session between the formatted preview and a raw
+// editable textarea. Edits sync straight into aiSessionResult (via the textarea
+// oninput), so saving afterwards stores the edited text.
+function toggleAiResultEdit(){
+  var rc=document.getElementById('aiResultContent');
+  var ta=document.getElementById('aiResultEditArea');
+  var btn=document.getElementById('aiEditToggleBtn');
+  if(!rc||!ta)return;
+  var editing = ta.style.display!=='none';
+  if(editing){
+    // leaving edit mode — re-render formatted preview from edited text
+    aiSessionResult = ta.value;
+    rc.innerHTML = formatAiResult(aiSessionResult);
+    rc.style.display='block'; ta.style.display='none';
+    if(btn) btn.textContent='✏️ Edit Before Saving';
+  } else {
+    ta.value = aiSessionResult || (rc.textContent||'');
+    rc.style.display='none'; ta.style.display='block';
+    if(btn) btn.textContent='✅ Done Editing';
+  }
+}
+
 function formatAiResult(text){
   var html='';text.split('\n').forEach(function(line){
     line=line.trim();if(!line)return;
@@ -5120,7 +5406,9 @@ if(typeof window._animRegistry === 'undefined') window._animRegistry = {};
 // Build controls for a session phase (called from renderSessionContent).
 function buildAnimControls(phase, pTmpl, phaseIdx, sessionId, isTeam){
   var setup = null;
-  if(sessionId && typeof SESSION_SETUPS !== 'undefined' && SESSION_SETUPS[sessionId]){
+  // A user-edited phase carries its own custom setup — highest priority.
+  if(phase && phase.setup && phase.setup.elements) setup = phase.setup;
+  if(!setup && sessionId && typeof SESSION_SETUPS !== 'undefined' && SESSION_SETUPS[sessionId]){
     var sd = SESSION_SETUPS[sessionId];
     if(sd.phases && sd.phases[phaseIdx] && sd.phases[phaseIdx].setup) setup = sd.phases[phaseIdx].setup;
   }
