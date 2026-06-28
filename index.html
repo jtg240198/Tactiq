@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v36 -->
+<!-- BUILD-2026-06-28-v37 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v36</div>
+    <div class="land-badge">⚽ AI Football Coaching · v37</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1391,7 +1391,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v36 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v37 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -5920,8 +5920,43 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 
 <!-- ══════════ FITNESS SESSION GENERATOR ══════════ -->
+<div id="fitnessSessionScreen" class="screen">
+  <div class="wrap">
+    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="navigate('/fitness')">← Fitness Hub</button></div>
+    <div class="pro-badge">⚡ Club Pro</div>
+    <h2 id="fitnessSessionTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 4px">Build <em>Fitness Session</em></h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 16px">Describe your squad, the focus and any constraints — get a full S&amp;C session.</p>
 
+    <div id="fitnessPromptArea">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Try asking:</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="ai-suggestion-btn" onclick="document.getElementById('fitnessPromptInput').value=this.textContent">30-minute speed &amp; agility session for 16 U15s, minimal equipment</button>
+          <button class="ai-suggestion-btn" onclick="document.getElementById('fitnessPromptInput').value=this.textContent">In-season lower-body strength session, gym available, matchday minus 3</button>
+          <button class="ai-suggestion-btn" onclick="document.getElementById('fitnessPromptInput').value=this.textContent">Hamstring injury-prevention protocol for a sprint-heavy winger</button>
+          <button class="ai-suggestion-btn" onclick="document.getElementById('fitnessPromptInput').value=this.textContent">Repeated-sprint conditioning using ball-based drills, 20 players</button>
+        </div>
+      </div>
 
+      <div class="form-group">
+        <textarea class="form-input" id="fitnessPromptInput" rows="4" placeholder="e.g. 30-minute conditioning session for my U16s the day after a match, focus on aerobic recovery, cones and balls only..." style="resize:none;font-size:14px"></textarea>
+      </div>
+
+      <button class="btn" style="width:100%" onclick="runFitnessAssistant()" id="fitnessRunBtn">✨ Generate Fitness Session</button>
+    </div>
+
+    <div id="fitnessResultArea" style="display:none">
+      <div style="height:1px;background:var(--border);margin:16px 0"></div>
+      <div id="fitnessResultContent" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" style="flex:1" onclick="saveFitnessSession()">💾 Save Session</button>
+        <button class="btn-ghost" style="flex:1" onclick="openFitnessCategory(fitnessCurrentCategory)">↻ Build Another</button>
+      </div>
+    </div>
+
+    <div id="fitnessErrorMsg" class="msg" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
 
 </body>
 </html>
