@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-26-v33 -->
+<!-- BUILD-2026-06-26-v34 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -523,7 +523,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v33</div>
+    <div class="land-badge">⚽ AI Football Coaching · v34</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1391,7 +1391,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-26-v33 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-26-v34 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -2092,6 +2092,10 @@ function parsePractice(desc, phaseName) {
   const hasDribble = /dribble|weave|carry|take on/.test(d);
   const hasRun     = /run|sprint|overlap|burst|movement/.test(d);
   const hasShoot   = /shoot|finish|shot|strike/.test(d);
+  // Combination play: lay-offs, 1-2s, give-and-gos, sets, flicks, follow-ups —
+  // these need a triangle/Y shape and a feed→combine→finish sequence, NOT a
+  // flat passing line.
+  const isCombo    = /\blay.?off|\b1\s*-\s*2\b|\bone[- ]?two\b|give.?and.?go|wall pass|combination|combine|flick|\bset[- ]?back\b|\bcut[- ]?back\b|\bthird[- ]?man\b|\bfollow[- ]?up\b/.test(d);
   const hasCross   = /\bnear.?post|far.?post|byline|delivery|deliver|pull.?back|cutback|inswing|outswing/.test(d) || /\bcross(?:es|ed|ing)?\s+(?:to|into|the|from)/.test(d);
   const hasGKBuild = /from gk|gk distribut|goalkeeper.*pass|gk.*pass|play.*back|build.*back/.test(d);
   const isWide     = /wide|flank|touchline|winger/.test(d);
@@ -2122,6 +2126,12 @@ function parsePractice(desc, phaseName) {
     pitchType = 'half';
     if(goals===0) goals=1;
   }
+
+  // Finishing combinations need a goal to shoot at — put them on a half pitch.
+  if(isCombo && hasShoot && pitchType!=='full'){
+    pitchType = 'half';
+    if(goals===0) goals=1;
+  }
   // GK build-up forces GK
   if(hasGKBuild && gk===0) gk=1;
 
@@ -2129,7 +2139,7 @@ function parsePractice(desc, phaseName) {
     attackers, defenders, neutrals, gk,
     cones, poles, goals, miniGoals, balls,
     areaW, areaH, pitchType,
-    hasPass, hasDribble, hasRun, hasShoot,
+    hasPass, hasDribble, hasRun, hasShoot, isCombo,
     hasCross, hasGKBuild, isWide,
     isCorner, cornerSide,
     roles, phaseName,
@@ -2370,6 +2380,59 @@ function layoutActions(parsed, players, vw, vh, isTeam) {
 
   if(attackerEls.length === 0) return elements;
   const a0 = attackerEls[0];
+
+  // ── COMBINATION / FINISHING PATTERN ─────────────────────────
+  // lay-offs, 1-2s, sets, flicks, follow-ups. Shape: a triangle with the
+  // feeder (deep mid) at the base and finishers up top near the box. One ball
+  // flows feed → strikers link → set → finish, with off-ball runs.
+  if(parsed.isCombo && attackerEls.length >= 2 && !parsed.hasGKBuild){
+    // feeder = the deep player (a midfielder if labelled 'M', else the one
+    // furthest from goal); finishers = up to two strikers nearest goal.
+    var feeder = attackerEls.find(function(e){ return /^M/.test(e.label||''); });
+    var finishers = attackerEls.filter(function(e){ return e !== feeder; });
+    if(!feeder){
+      // no explicit mid — deepest attacker feeds, rest finish
+      var byDepth = attackerEls.slice().sort(function(a,b){ return b.y - a.y; });
+      feeder = byDepth[0];
+      finishers = attackerEls.filter(function(e){ return e !== feeder; });
+    }
+    var fA = finishers[0], fB = finishers[1]; // fB may be undefined (1 finisher)
+
+    var bx=Math.round(vw/2),    by=Math.round(vh*0.60);   // feeder at base
+    var lx=Math.round(vw*0.30), ly=Math.round(vh*0.32);   // left finisher
+    var rx=Math.round(vw*0.70), ry=Math.round(vh*0.32);   // right finisher
+    var px=Math.round(vw*0.45), py=Math.round(vh*0.47);   // feeder's shooting pocket
+    var gX=Math.round(vw/2),    gY=20;                     // goal
+
+    feeder.x=bx; feeder.y=by;
+    fA.x=lx; fA.y=ly;
+    if(fB){ fB.x=rx; fB.y=ry; }
+
+    elements.push({type:'ball',x:bx-12,y:by-12});
+    var seq=1;
+    // feed into the first finisher
+    elements.push({type:'pass',x1:bx,y1:by,x2:lx,y2:ly,step:seq++});
+    // feeder makes a forward run to arrive in the pocket
+    elements.push({type:'run',x1:bx,y1:by,x2:px,y2:py,step:seq++});
+    if(fB){
+      // strikers link (the 1-2 feel): A across to B
+      elements.push({type:'pass',x1:lx,y1:ly,x2:rx,y2:ry,step:seq++});
+      // B sets the ball back for the arriving feeder
+      elements.push({type:'pass',x1:rx,y1:ry,x2:px,y2:py,step:seq++});
+    } else {
+      // single finisher lays the ball back for the runner
+      elements.push({type:'pass',x1:lx,y1:ly,x2:px,y2:py,step:seq++});
+    }
+    // finish
+    elements.push({type:'shot',x1:px,y1:py,x2:gX,y2:gY,step:seq++});
+    // a finisher follows the shot in
+    var follow = fB || fA;
+    elements.push({type:'run',x1:follow.x,y1:follow.y,x2:Math.round(vw*0.55),y2:Math.round(vh*0.18),step:seq++});
+
+    elements.push({type:'label',x:Math.round(vw/2),y:vh-10,
+      text:'Feed \u2192 combine \u2192 set \u2192 finish',size:6.5,color:'rgba(0,194,255,0.55)'});
+    return elements;
+  }
 
   // ── GK BUILD-UP ─────────────────────────────────────────────
   if(parsed.hasGKBuild && gkEls.length > 0){
