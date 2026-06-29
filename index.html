@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v43 -->
+<!-- BUILD-2026-06-28-v44 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v43</div>
+    <div class="land-badge">⚽ AI Football Coaching · v44</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v43 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v44 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -5159,7 +5159,7 @@ async function renderCoaches(){
   var el=document.getElementById('coachesContent');
   var owned=myClubs.filter(function(c){return c.owner_id===currentUser.id;});
   var joined=myClubs.filter(function(c){return c.owner_id!==currentUser.id;});
-  var html='';
+  var html='<button class="btn-ghost" style="width:100%;margin-bottom:12px;border-color:var(--gold);color:var(--gold)" onclick="runClubDiagnostic()">🔧 Run Diagnostic</button>';
 
   // ── Your club (owner) ───────────────────────────────
   if(owned.length){
@@ -5223,6 +5223,36 @@ async function renderCoaches(){
     '</div>';
 
   el.innerHTML=html;
+}
+
+async function runClubDiagnostic(){
+  var out=[];
+  try{ out.push('sb defined: '+(typeof sb!=='undefined' && !!sb)); }catch(e){ out.push('sb check err'); }
+  try{ out.push('project: '+(typeof SUPABASE_URL!=='undefined'?SUPABASE_URL.replace('https://',''):'?')); }catch(e){}
+  out.push('userPlan: '+(typeof userPlan!=='undefined'?userPlan:'?')+' · isClubPro: '+(typeof isClubProPlan==='function'?isClubProPlan():'?'));
+  out.push('currentUser.id: '+((currentUser&&currentUser.id)||'NULL'));
+  try{
+    var s=await sb.auth.getSession();
+    var sess=s&&s.data&&s.data.session;
+    out.push('getSession: '+(sess?('uid='+sess.user.id+' · token='+(sess.access_token?'present':'MISSING')):'NO SESSION')+(s&&s.error?(' err='+s.error.message):''));
+  }catch(e){ out.push('getSession EXC: '+e.message); }
+  try{
+    var u=await sb.auth.getUser();
+    out.push('getUser: '+((u&&u.data&&u.data.user)?u.data.user.id:('NULL'+(u&&u.error?(' err='+u.error.message):''))));
+  }catch(e){ out.push('getUser EXC: '+e.message); }
+  try{
+    var w=await sb.rpc('whoami');
+    out.push('DB sees auth.uid(): '+(w.error?('ERR '+w.error.message):JSON.stringify(w.data)));
+  }catch(e){ out.push('whoami EXC: '+e.message); }
+  try{
+    var uid=await getAuthUid();
+    out.push('owner_id to insert: '+(uid||'NULL'));
+    var code='DIAG'+Math.floor(Math.random()*900+100);
+    var r=await sb.from('clubs').insert([{owner_id:uid,name:'__diag__',invite_code:code}]).select();
+    if(r.error){ out.push('TEST INSERT: FAIL · code='+r.error.code+' · '+r.error.message); }
+    else { out.push('TEST INSERT: OK (cleaning up)'); if(r.data&&r.data[0]) await sb.from('clubs').delete().eq('id',r.data[0].id); }
+  }catch(e){ out.push('TEST INSERT EXC: '+e.message); }
+  alert(out.join('\n\n'));
 }
 
 async function createClub(){
