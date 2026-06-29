@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v38 -->
+<!-- BUILD-2026-06-28-v39 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -19,6 +19,62 @@
   --card:rgba(18,53,91,0.55);--error:#FF4D6A;--success:#00E676;
   --gold:#FFB300;--purple:#7C4DFF;
 }
+/* ── LIGHT THEME (opt-in via toggle; default stays dark) ───────── */
+html[data-theme="light"]{
+  --navy:#eaf0f7;--navy2:#ffffff;--accent:#0089c4;--accent2:#006d9c;
+  --muted:#5a7088;--border:rgba(10,37,64,0.14);--card:#ffffff;
+}
+html[data-theme="light"] body{color:#10293f;background:#eaf0f7;
+  background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,137,196,0.08) 0%,transparent 65%);}
+html[data-theme="light"] .navbar,
+html[data-theme="light"] .top-nav,
+html[data-theme="light"] .ex-tabs,
+html[data-theme="light"] .cp-field,
+html[data-theme="light"] .opt:not(.sel),
+html[data-theme="light"] .phase-card,
+html[data-theme="light"] .se-tool,
+html[data-theme="light"] .form-input{background:#ffffff;border-color:rgba(10,37,64,0.14);}
+html[data-theme="light"] .app-header h1,
+html[data-theme="light"] .auth-title,
+html[data-theme="light"] .club-profile-name,
+html[data-theme="light"] .cp-field-value,
+html[data-theme="light"] .empty-title,
+html[data-theme="light"] .ex-card-title,
+html[data-theme="light"] .ex-header h1,
+html[data-theme="light"] .ex-phase-title,
+html[data-theme="light"] .form-input,
+html[data-theme="light"] .land-aud-title,
+html[data-theme="light"] .land-bottom-cta h2,
+html[data-theme="light"] .land-feat-text h5,
+html[data-theme="light"] .land-h1,
+html[data-theme="light"] .land-section-title,
+html[data-theme="light"] .land-step-text h4,
+html[data-theme="light"] .load-wrap h2,
+html[data-theme="light"] .nav-logo,
+html[data-theme="light"] .ph-title,
+html[data-theme="light"] .plan-amount,
+html[data-theme="light"] .plan-dash-label,
+html[data-theme="light"] .plan-name,
+html[data-theme="light"] .profile-name,
+html[data-theme="light"] .profile-row-value,
+html[data-theme="light"] .profile-setup-title,
+html[data-theme="light"] .q-text,
+html[data-theme="light"] .sc-title,
+html[data-theme="light"] .sess-title,
+html[data-theme="light"] .sess-type-title,
+html[data-theme="light"] .signup-plan-name,
+html[data-theme="light"] .signup-selected-plan-name,
+html[data-theme="light"] .sp-card-title,
+html[data-theme="light"] .sp-hub-title,
+html[data-theme="light"] .sp-saved-name,
+html[data-theme="light"] .sp-tool-btn,
+html[data-theme="light"] .sp-type-card-label,
+html[data-theme="light"] .top-nav-logo{color:#10293f;}
+html[data-theme="light"] .land-testi-text{color:#33485f !important;}
+html[data-theme="light"] .btn,
+html[data-theme="light"] .opt.sel,
+html[data-theme="light"] .anim-btn.playing,
+html[data-theme="light"] .nav-avatar{color:#fff;}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;background:var(--navy);color:#fff;font-family:'Inter',sans-serif}
 body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,0.07) 0%,transparent 65%)}
@@ -505,6 +561,7 @@ fbq('track','PageView');
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
 </head>
 <body>
+<script>try{if(localStorage.getItem('tactiq_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 
 <!-- ══════════ TOP NAVBAR ══════════ -->
 <nav class="top-nav" id="topNav">
@@ -531,7 +588,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v38</div>
+    <div class="land-badge">⚽ AI Football Coaching · v39</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -989,6 +1046,7 @@ fbq('track','PageView');
     <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="showScreen('dashboardScreen')">Dashboard</button></div>
     <button class="back-btn" onclick="showScreen('dashboardScreen')">← Back to Dashboard</button>
     <div id="sessionContent"></div>
+    <button class="btn" id="saveAiBtn" style="display:none;width:100%;margin-bottom:8px" onclick="saveAiBuiltSession()">💾 Save to History</button>
     <button class="btn-ghost" id="editSessionBtn" style="width:100%;margin-bottom:8px" onclick="openSessionEditor()">✏️ Edit Session &amp; Diagrams</button>
     <button class="pdf-btn" id="pdfBtn" onclick="exportPDF()">📄 Export as PDF</button>
     <button class="btn-ghost" onclick="tryStartSession()">Build Another Session</button>
@@ -1410,7 +1468,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v38 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v39 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -1939,6 +1997,22 @@ const ROUTES={
   '/fitness':()=>currentUser&&isClubProPlan()?openFitnessHub():navigate('/dashboard'),
 };
 function navigate(path){window.history.pushState({},document.title,path);routeTo(path);}
+
+// ── Theme (light/dark) ─────────────────────────────────────────
+function applyTheme(t){
+  if(t==='light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  try{ localStorage.setItem('tactiq_theme', t==='light'?'light':'dark'); }catch(e){}
+  var b=document.getElementById('themeToggleBtn'); if(b) b.textContent=(t==='light'?'🌙':'☀️');
+}
+function toggleTheme(){
+  var cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  applyTheme(cur==='light'?'dark':'light');
+}
+window.addEventListener('DOMContentLoaded',function(){
+  var light=document.documentElement.getAttribute('data-theme')==='light';
+  var b=document.getElementById('themeToggleBtn'); if(b) b.textContent=(light?'🌙':'☀️');
+});
 function routeTo(path){(ROUTES[path]||ROUTES['/'])();}
 function updateNavbar(){
   const pub=document.getElementById('navPublic');
@@ -4625,6 +4699,7 @@ function viewSession(i, fromHistory){
   };
   applySessionEditOverlay(currentSession);
   currentSession._idx=i;
+  var _sab=document.getElementById('saveAiBtn'); if(_sab) _sab.style.display='none';
   renderSessionContent(currentSession);
   document.getElementById('pdfBtn').style.display=(userPlan!=='free')?'flex':'none';
   // Update back button destination based on where we came from
@@ -5079,6 +5154,63 @@ function esc(s){return s.replace(/'/g,"\\'");}
 var aiSessionResult=null;
 function openAiAssistant(){document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});document.getElementById('aiAssistantScreen').classList.add('active');document.getElementById('aiResultArea').style.display='none';document.getElementById('aiPromptInput').value='';window.scrollTo(0,0);}
 function setAiPrompt(t){document.getElementById('aiPromptInput').value=t;}
+// Parse the AI assistant's structured text into a session object so it renders
+// with diagrams + animation (and becomes editable) via renderSessionContent.
+// Expected format: "SESSION TITLE:", "FOCUS:", "DURATION:", then
+// "PHASE: [name] | [duration] | [description]" lines, then "- " coaching points.
+function canonicalPhase(name){
+  var n=(name||'').toLowerCase();
+  if(/warm|activat|mobil|prep|pulse/.test(n)) return 'Activation';
+  if(/cool|stretch|recover|down/.test(n)) return 'Cool Down';
+  if(/game|match|ssg|small.?sided|scenario|possession|conditioned|phase of play|tournament/.test(n)) return 'Game Scenario';
+  if(/technical|skill|drill|passing|unopposed|practice|rondo|finishing/.test(n)) return 'Technical';
+  return name||'Phase';
+}
+function parseAiSessionText(text, isTeam){
+  if(!text) return null;
+  var lines=text.split('\n');
+  var title='',overview='',focus='',duration='',intensity='';
+  var phases=[];
+  var seenCP=false;
+  lines.forEach(function(raw){
+    var line=raw.trim(); if(!line) return;
+    if(/^SESSION TITLE\s*:/i.test(line)){ title=line.replace(/^SESSION TITLE\s*:/i,'').trim(); return; }
+    if(/^TITLE\s*:/i.test(line) && !title){ title=line.replace(/^TITLE\s*:/i,'').trim(); return; }
+    if(/^FOCUS\s*:/i.test(line)){ focus=line.replace(/^FOCUS\s*:/i,'').trim(); return; }
+    if(/^DURATION\s*:/i.test(line)){ duration=line.replace(/^DURATION\s*:/i,'').trim(); return; }
+    if(/^INTENSITY\s*:/i.test(line)){ intensity=line.replace(/^INTENSITY\s*:/i,'').trim(); return; }
+    if(/^OVERVIEW\s*:/i.test(line)){ overview=line.replace(/^OVERVIEW\s*:/i,'').trim(); return; }
+    if(/^(PLAYERS|EQUIPMENT|AGE|ABILITY|CATEGORY|SUMMARY)\s*:/i.test(line)){ return; }
+    if(/^PHASE\s*:/i.test(line)){
+      var rest=line.replace(/^PHASE\s*:/i,'').trim();
+      var parts=rest.split('|').map(function(s){return s.trim();});
+      phases.push({name:parts[0]||'Phase',duration:parts[1]||'',desc:parts[2]||parts[0]||'',points:[]});
+      seenCP=false;
+      return;
+    }
+    if(/^COACHING POINTS/i.test(line)){ seenCP=true; return; }
+    if(/^[-•*]\s+/.test(line)){
+      var pt=line.replace(/^[-•*]\s+/,'').trim();
+      if(!phases.length) return;
+      // points right after a PHASE line belong to it; a COACHING POINTS block is
+      // session-level — surface those on the first phase rather than the last.
+      (seenCP ? phases[0] : phases[phases.length-1]).points.push(pt);
+      return;
+    }
+    if(!phases.length) overview += (overview?' ':'')+line;
+  });
+  if(!phases.length) return null; // let caller fall back to plain text
+  if(!title) title='AI Session';
+  var im=(intensity||'').toLowerCase();
+  var inten= /very high|high/.test(im)?'High': /low/.test(im)?'Low':'Medium';
+  return {
+    title:title, overview:overview||focus||'', focus:focus||'AI Generated',
+    category:'AI Assistant', intensity:inten, time:duration||'', isTeam:!!isTeam,
+    phases:phases.map(function(p){return {phase:canonicalPhase(p.name),title:p.name,desc:p.desc,duration:p.duration,points:p.points};}),
+    _aiBuilt:true, _rawText:text
+  };
+}
+
 async function runAiAssistant(){
   var prompt=document.getElementById('aiPromptInput').value.trim();if(!prompt)return;
   var btn=document.getElementById('aiRunBtn'),res=document.getElementById('aiResultArea'),rc=document.getElementById('aiResultContent'),err=document.getElementById('aiErrorMsg');
@@ -5089,7 +5221,23 @@ async function runAiAssistant(){
     var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
     var d=await r.json();if(!d.content||!d.content[0])throw new Error('No response');
     aiSessionResult=d.content[0].text;
-    rc.innerHTML=formatAiResult(aiSessionResult);res.style.display='block';res.scrollIntoView({behavior:'smooth'});
+    var isTeamGuess = !/\bsolo\b|individual|\b1 player\b|on your own|by yourself/i.test(prompt+' '+aiSessionResult);
+    var parsedAi = parseAiSessionText(aiSessionResult, isTeamGuess);
+    if(parsedAi && parsedAi.phases && parsedAi.phases.length){
+      // Structured session: render with diagrams + animation via the session view.
+      currentSession = parsedAi; currentSession._idx = -1;
+      renderSessionContent(currentSession);
+      var pb=document.getElementById('pdfBtn'); if(pb) pb.style.display=(userPlan!=='free')?'flex':'none';
+      var sab=document.getElementById('saveAiBtn'); if(sab) sab.style.display='block';
+      var esb=document.getElementById('editSessionBtn'); if(esb) esb.style.display='block';
+      // back button returns to the AI assistant
+      document.querySelectorAll('#sessionScreen .back-btn').forEach(function(b){
+        b.textContent='← AI Assistant'; b.onclick=function(){ showScreen('aiAssistantScreen'); };
+      });
+      showScreen('sessionScreen');
+    } else {
+      rc.innerHTML=formatAiResult(aiSessionResult);res.style.display='block';res.scrollIntoView({behavior:'smooth'});
+    }
   }catch(e){err.textContent='Could not generate session. Please try again.';err.style.display='block';}
   btn.textContent='Generate Session';btn.disabled=false;
 }
@@ -5124,6 +5272,25 @@ function formatAiResult(text){
     else{html+='<p style="margin:3px 0;font-size:13px;color:var(--text)">'+line+'</p>';}
   });return html;
 }
+// Persist an AI-built (structured) session — stores phases jsonb so the diagrams
+// and animation come back when it's reopened, and it stays editable.
+async function saveAiBuiltSession(){
+  if(!currentSession || !currentSession._aiBuilt || !currentUser){ return; }
+  var s=currentSession;
+  try{
+    var res=await sb.from('sessions').insert([{
+      user_id:currentUser.id, title:s.title, category:s.category||'AI Assistant',
+      overview:s.overview||'', focus:s.focus||'AI Generated', intensity:s.intensity||'Medium',
+      time:s.time||'', phases:s.phases, is_team:!!s.isTeam, created_at:new Date().toISOString()
+    }]).select();
+    if(res.error){ alert('Could not save session: '+res.error.message); return; }
+    if(res.data&&res.data[0]){ userSessions.unshift(res.data[0]); currentSession.id=res.data[0].id; currentSession._aiBuilt=false; }
+    var b=document.getElementById('saveAiBtn'); if(b) b.style.display='none';
+    var st=document.getElementById('statTotal'); if(st) st.textContent=userSessions.length;
+    alert('Session saved to history!');
+  }catch(e){ alert('Could not save session: '+e.message); }
+}
+
 async function saveAiSession(){
   if(!aiSessionResult||!currentUser)return;
   var m=aiSessionResult.match(/SESSION TITLE:\s*(.+)/);var title=m?m[1].trim():'AI Generated Session';
@@ -6245,6 +6412,8 @@ document.addEventListener('DOMContentLoaded',function(){
     <div id="fitnessErrorMsg" class="msg" style="display:none;margin-top:12px"></div>
   </div>
 </div>
+<button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle light/dark theme" title="Toggle light/dark"
+  style="position:fixed;bottom:16px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--accent);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.28);backdrop-filter:blur(6px)">☀️</button>
 
 </body>
 </html>
