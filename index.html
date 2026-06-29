@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v39 -->
+<!-- BUILD-2026-06-28-v41 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -588,7 +588,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v39</div>
+    <div class="land-badge">⚽ AI Football Coaching · v41</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1468,7 +1468,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v39 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v41 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -5162,54 +5162,90 @@ function canonicalPhase(name){
   var n=(name||'').toLowerCase();
   if(/warm|activat|mobil|prep|pulse/.test(n)) return 'Activation';
   if(/cool|stretch|recover|down/.test(n)) return 'Cool Down';
-  if(/game|match|ssg|small.?sided|scenario|possession|conditioned|phase of play|tournament/.test(n)) return 'Game Scenario';
+  if(/game|match|ssg|small.?sided|scenario|possession|conditioned|phase of play|tournament|press|transition|counter/.test(n)) return 'Game Scenario';
   if(/technical|skill|drill|passing|unopposed|practice|rondo|finishing/.test(n)) return 'Technical';
   return name||'Phase';
 }
+function _aiStripMd(t){ return (t||'').replace(/\*\*/g,'').replace(/[*_`]/g,'').trim(); }
+function _aiTooManyWords(n){ return _aiStripMd(n||'').trim().split(/\s+/).length>5; }
+function _aiExtractDur(s){ var m=(s||'').match(/(\d+\s*(?:-\s*\d+)?\s*(?:min(?:ute)?s?|mins|m)\b)/i); return m?m[1].replace(/\s+/g,' ').trim():''; }
+function _aiCleanName(t){
+  var x=_aiStripMd(t).replace(/^[#>*_\s]+/,'').replace(/^\d+[.)]\s*/,'').replace(/^phase\s*\d*\s*[:\-]?\s*/i,'');
+  x=x.replace(/\s*[—–]\s.*$/,'').replace(/\s*[|:]\s.*$/,'').replace(/\s*[|:]$/,'');
+  x=x.replace(/\(.*?\)/g,'').replace(/\s*\d+\s*(?:min|minute|mins|m)\b.*$/i,'');
+  return x.trim();
+}
+var _AI_PHASE_KW=/(warm[\s\-]?up|warm[\s\-]?down|activation|mobilis|pulse|technical|skill|unopposed|main\b|game|small[\s\-]?sided|\bssg\b|possession|rondo|finishing|phase of play|conditioned|transition|pressing|cool[\s\-]?down|recovery|stretch)/i;
+function _aiInlinePhase(line){
+  var m=line.match(/^\s*(?:#{1,4}\s*|\*\*\s*|\d+[.)]\s*|phase\s*\d*\s*[:\-]?\s*)?([A-Za-z][\w &\/\-]{1,45}?)\s*(?:\(([^)]*)\))?\s*[:|]\s*(\S.+)$/i);
+  if(!m) return null;
+  var name=_aiStripMd(m[1]).trim();
+  if(!_AI_PHASE_KW.test(name)||_aiTooManyWords(name)) return null;
+  var desc=_aiStripMd(m[3]).trim();
+  if(/^\(?\s*\d+\s*(?:min|minute|mins|m)\)?\s*$/i.test(desc)) return {name:_aiCleanName(name),duration:_aiExtractDur(line),desc:'',header:true};
+  return {name:_aiCleanName(name),duration:_aiExtractDur(m[2]||line),desc:desc,header:false};
+}
+function _aiHeaderOnly(line){
+  var l=line.trim(); if(!l||l.length>60) return null;
+  var hasMarker=/^(#{1,4}\s|\*\*|\d+[.)]\s|phase\b)/i.test(l)||/:\s*$/.test(l)||/\(\s*\d+\s*(?:min|minute|mins|m)/i.test(l)||/[—–\-]\s*\d+\s*(?:min|minute|mins|m)/i.test(l);
+  var core=_aiStripMd(l).replace(/^\d+[.)]\s*/,'').replace(/^phase\s*\d*\s*[:\-]?\s*/i,'');
+  if(hasMarker && _AI_PHASE_KW.test(core) && core.replace(/\(.*?\)/g,'').length<55 && !_aiTooManyWords(_aiCleanName(l))) return {name:_aiCleanName(l),duration:_aiExtractDur(l)};
+  return null;
+}
+function _aiHeaderParse(lines){
+  var phases=[],cur=null;
+  lines.forEach(function(raw){
+    var t=raw.trim(); if(!t) return;
+    var inl=_aiInlinePhase(t);
+    if(inl && inl.desc){ cur={name:inl.name,duration:inl.duration,desc:inl.desc,points:[]}; phases.push(cur); return; }
+    var hdr=_aiHeaderOnly(t) || (inl?{name:inl.name,duration:inl.duration}:null);
+    if(hdr){ cur={name:hdr.name,duration:hdr.duration||'',desc:'',points:[]}; phases.push(cur); return; }
+    if(cur){
+      var clean=_aiStripMd(t).replace(/^[-•*]\s+/,'').trim();
+      if(/^[-•*]\s+/.test(t)) cur.points.push(clean);
+      cur.desc += (cur.desc?' ':'')+clean;
+    }
+  });
+  phases.forEach(function(p){ if(!p.desc && p.points.length) p.desc=p.points.join('. '); });
+  return phases.filter(function(p){ return (p.desc&&p.desc.length>3)||p.points.length; });
+}
 function parseAiSessionText(text, isTeam){
   if(!text) return null;
-  var lines=text.split('\n');
-  var title='',overview='',focus='',duration='',intensity='';
+  var lines=text.replace(/\r/g,'').split('\n');
+  function grab(re){ for(var i=0;i<lines.length;i++){ var m=lines[i].match(re); if(m) return m[1].trim(); } return ''; }
+  var title=grab(/^\s*#*\s*(?:SESSION\s+)?TITLE\s*[:\-]\s*(.+)/i);
+  var focus=grab(/^\s*#*\s*FOCUS\s*[:\-]\s*(.+)/i);
+  var duration=grab(/^\s*#*\s*(?:TOTAL\s+)?DURATION\s*[:\-]\s*(.+)/i);
+  var intensity=grab(/^\s*#*\s*INTENSITY\s*[:\-]\s*(.+)/i);
+  var overview=grab(/^\s*#*\s*OVERVIEW\s*[:\-]\s*(.+)/i);
+  if(!title) title=grab(/^\s*#+\s*(.+)/);
   var phases=[];
-  var seenCP=false;
-  lines.forEach(function(raw){
-    var line=raw.trim(); if(!line) return;
-    if(/^SESSION TITLE\s*:/i.test(line)){ title=line.replace(/^SESSION TITLE\s*:/i,'').trim(); return; }
-    if(/^TITLE\s*:/i.test(line) && !title){ title=line.replace(/^TITLE\s*:/i,'').trim(); return; }
-    if(/^FOCUS\s*:/i.test(line)){ focus=line.replace(/^FOCUS\s*:/i,'').trim(); return; }
-    if(/^DURATION\s*:/i.test(line)){ duration=line.replace(/^DURATION\s*:/i,'').trim(); return; }
-    if(/^INTENSITY\s*:/i.test(line)){ intensity=line.replace(/^INTENSITY\s*:/i,'').trim(); return; }
-    if(/^OVERVIEW\s*:/i.test(line)){ overview=line.replace(/^OVERVIEW\s*:/i,'').trim(); return; }
-    if(/^(PLAYERS|EQUIPMENT|AGE|ABILITY|CATEGORY|SUMMARY)\s*:/i.test(line)){ return; }
-    if(/^PHASE\s*:/i.test(line)){
-      var rest=line.replace(/^PHASE\s*:/i,'').trim();
-      var parts=rest.split('|').map(function(s){return s.trim();});
-      phases.push({name:parts[0]||'Phase',duration:parts[1]||'',desc:parts[2]||parts[0]||'',points:[]});
-      seenCP=false;
-      return;
-    }
-    if(/^COACHING POINTS/i.test(line)){ seenCP=true; return; }
-    if(/^[-•*]\s+/.test(line)){
-      var pt=line.replace(/^[-•*]\s+/,'').trim();
-      if(!phases.length) return;
-      // points right after a PHASE line belong to it; a COACHING POINTS block is
-      // session-level — surface those on the first phase rather than the last.
-      (seenCP ? phases[0] : phases[phases.length-1]).points.push(pt);
-      return;
-    }
-    if(!phases.length) overview += (overview?' ':'')+line;
-  });
-  if(!phases.length) return null; // let caller fall back to plain text
+  var hasStrict=lines.some(function(l){ return /^\s*PHASE\s*:/i.test(l) && l.indexOf('|')>=0; });
+  if(hasStrict){
+    var seenCP=false;
+    lines.forEach(function(raw){
+      var line=raw.trim(); if(!line) return;
+      if(/^PHASE\s*:/i.test(line) && line.indexOf('|')>=0){
+        var parts=line.replace(/^PHASE\s*:/i,'').split('|').map(function(s){return s.trim();});
+        phases.push({name:_aiCleanName(parts[0]||'Phase'),duration:parts[1]||'',desc:parts[2]||'',points:[]}); seenCP=false;
+      } else if(/^COACHING POINTS/i.test(line)){ seenCP=true; }
+      else if(/^[-•*]\s+/.test(line) && phases.length){ (seenCP?phases[0]:phases[phases.length-1]).points.push(line.replace(/^[-•*]\s+/,'').trim()); }
+    });
+  } else {
+    phases=_aiHeaderParse(lines);
+  }
+  if(!phases.length) return null; // caller falls back to plain text
   if(!title) title='AI Session';
   var im=(intensity||'').toLowerCase();
-  var inten= /very high|high/.test(im)?'High': /low/.test(im)?'Low':'Medium';
+  var inten=/very high|high/.test(im)?'High':/low/.test(im)?'Low':'Medium';
   return {
     title:title, overview:overview||focus||'', focus:focus||'AI Generated',
     category:'AI Assistant', intensity:inten, time:duration||'', isTeam:!!isTeam,
-    phases:phases.map(function(p){return {phase:canonicalPhase(p.name),title:p.name,desc:p.desc,duration:p.duration,points:p.points};}),
+    phases:phases.map(function(p){ return {phase:canonicalPhase(p.name),title:p.name||p.phase,desc:p.desc,duration:p.duration,points:p.points}; }),
     _aiBuilt:true, _rawText:text
   };
 }
+
 
 async function runAiAssistant(){
   var prompt=document.getElementById('aiPromptInput').value.trim();if(!prompt)return;
@@ -5218,7 +5254,17 @@ async function runAiAssistant(){
   if(editBtn) editBtn.style.display=(isCoachPlan()||isClubPlan())?'block':'none';
   btn.textContent='Generating...';btn.disabled=true;err.style.display='none';res.style.display='none';
   try{
-    var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+    var aiSys='You are an expert football (soccer) coach designing training sessions using UEFA coaching methodology. Produce a complete, practical session a coach can run on the grass. Respond in EXACTLY this structure and nothing else:\n'+
+      'SESSION TITLE: [short title]\n'+
+      'FOCUS: [main theme]\n'+
+      'DURATION: [total time]\n'+
+      'INTENSITY: [Low, Medium or High]\n'+
+      'OVERVIEW: [one or two sentence summary]\n'+
+      'Then 3 to 5 phases, each on its OWN line formatted EXACTLY as:\n'+
+      'PHASE: [name] | [duration] | [description]\n'+
+      'Then a line "COACHING POINTS:" followed by 3 to 5 bullet lines each starting with "- ".\n'+
+      'CRITICAL: every PHASE description must be concrete and spatial so it can be drawn as a pitch diagram — state the player numbers (e.g. "5v2", "3v2 to goal"), whether there is a goalkeeper, the pitch area, and the key actions (pass, dribble, cross, shoot, press, switch). Keep each description to one or two sentences. Tailor everything to the coach\u2019s request.';
+    var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,system:aiSys})});
     var d=await r.json();if(!d.content||!d.content[0])throw new Error('No response');
     aiSessionResult=d.content[0].text;
     var isTeamGuess = !/\bsolo\b|individual|\b1 player\b|on your own|by yourself/i.test(prompt+' '+aiSessionResult);
