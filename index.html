@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v44 -->
+<!-- BUILD-2026-06-28-v45 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v44</div>
+    <div class="land-badge">⚽ AI Football Coaching · v45</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v44 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v45 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -5259,17 +5259,9 @@ async function createClub(){
   if(!isClubProPlan()){ navigate('/pricing'); return; }
   var name=prompt('Name your club (e.g. Riverside FC):','');
   if(name===null) return;
-  var uid=await getAuthUid();
-  if(!uid){ alert('Your login session looks expired. Please log out and back in, then try again.'); return; }
   try{
-    var code=_randCode(), attempts=0, res;
-    while(attempts<5){
-      res=await sb.from('clubs').insert([{owner_id:uid,name:(name||'My Club').trim(),invite_code:code}]).select();
-      if(!res.error) break;
-      if((res.error.message||'').toLowerCase().indexOf('duplicate')>=0 || (res.error.code==='23505')){ code=_randCode(); attempts++; continue; }
-      break;
-    }
-    if(res.error){ alert('Could not create club: '+res.error.message+'\n\nIf this mentions a missing table, the database setup SQL has not been run yet.'); return; }
+    var r=await sb.rpc('create_club',{p_name:(name||'My Club').trim()});
+    if(r.error){ alert('Could not create club: '+r.error.message+'\n\nIf this mentions the function does not exist, the create_club SQL has not been run yet.'); return; }
     await openCoachesScreen();
   }catch(e){ alert('Could not create club: '+e.message); }
 }
