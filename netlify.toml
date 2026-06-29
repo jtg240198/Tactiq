@@ -1,13 +1,35 @@
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Tactiq — Netlify configuration
+# Purpose: make the MAIN site URL always serve the newest deploy, so you no
+# longer have to open the deploy permalink to see your latest changes.
+#
+# How to use:
+#   1. Put this file named exactly "netlify.toml" in the ROOT of the GitHub repo
+#      that Netlify deploys (same folder as index.html).
+#   2. Commit & push. Netlify reads it on the next deploy.
+#   3. On your phone, do ONE hard refresh after the deploy finishes (or close the
+#      tab and reopen). From then on the main URL updates by itself.
+#
+# If you already have a netlify.toml, just copy the [[headers]] blocks below into
+# your existing file rather than replacing it.
 
-[functions]
-  node_bundler = "esbuild"
+# ── Always revalidate the HTML ────────────────────────────────────────────────
+# index.html is your whole app, so it must never be served stale. "no-cache"
+# means the browser may keep a copy but MUST check with Netlify every load and
+# only reuse it if nothing changed — so a new deploy shows up immediately.
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, no-cache, must-revalidate"
 
-[build]
-  ignore = "node_modules"
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, no-cache, must-revalidate"
 
-[build.environment]
-  SECRETS_SCAN_OMIT_PATHS = "node_modules"
+# ── Sensible default for everything else ──────────────────────────────────────
+# Other paths revalidate too. (Your app is a single file, so this is just a
+# safety net; static assets with hashed names could later be cached long-term.)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
