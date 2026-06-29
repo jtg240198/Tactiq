@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v47 -->
+<!-- BUILD-2026-06-28-v49 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v47</div>
+    <div class="land-badge">⚽ AI Football Coaching · v49</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v47 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v49 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -3791,7 +3791,7 @@ function buildSession(a,count=0){
 
 let currentUser=null,userPlan='free',userSessions=[],monthSessions=0;
 // Multi-coach (Club) state. myClubs = clubs I own or belong to.
-let myClubs=[], activeClubId=null;
+let myClubs=[], myPendingClubs=[], activeClubId=null;
 function activeClub(){ return myClubs.find(c=>c.id===activeClubId)||null; }
 function myClubRole(){ var c=activeClub(); return c?c.role:null; }
 function canEditClub(){ var r=myClubRole(); return r==='admin'||r==='edit'; }
@@ -3813,19 +3813,22 @@ async function getAuthUid(){
   return (currentUser&&currentUser.id)||null;
 }
 async function loadMyClubs(){
-  myClubs=[]; activeClubId=null;
+  myClubs=[]; myPendingClubs=[]; activeClubId=null;
   if(typeof sb==='undefined'||!sb) return;
   var uid=await getAuthUid();
   if(!uid) return;
   try{
     var owned=await sb.from('clubs').select('*').eq('owner_id',uid);
-    var mem=await sb.from('club_members').select('role,clubs(*)').eq('user_id',uid);
+    var mem=await sb.from('club_members').select('role,status,clubs(*)').eq('user_id',uid);
     var list=[];
-    if(owned&&owned.data) owned.data.forEach(function(c){ list.push({id:c.id,name:c.name,invite_code:c.invite_code,owner_id:c.owner_id,role:'admin'}); });
-    if(mem&&mem.data) mem.data.forEach(function(m){ if(m.clubs) list.push({id:m.clubs.id,name:m.clubs.name,invite_code:m.clubs.invite_code,owner_id:m.clubs.owner_id,role:m.role||'view'}); });
+    if(owned&&owned.data) owned.data.forEach(function(c){ list.push({id:c.id,name:c.name,invite_code:c.invite_code,owner_id:c.owner_id,role:'admin',max_coaches:c.max_coaches||10}); });
+    if(mem&&mem.data) mem.data.forEach(function(m){
+      if(m.status==='pending'){ myPendingClubs.push({name:(m.clubs&&m.clubs.name)||'a club'}); return; }
+      if(m.clubs) list.push({id:m.clubs.id,name:m.clubs.name,invite_code:m.clubs.invite_code,owner_id:m.clubs.owner_id,role:m.role||'view',max_coaches:m.clubs.max_coaches||10});
+    });
     var seen={}; myClubs=list.filter(function(c){ if(seen[c.id])return false; seen[c.id]=1; return true; });
     activeClubId = myClubs.length?myClubs[0].id:null;
-  }catch(e){ myClubs=[]; activeClubId=null; }
+  }catch(e){ myClubs=[]; myPendingClubs=[]; activeClubId=null; }
 }
 let coachingProfile=null,cpEquip=[];
 let stepIdx=0,answers={},multiSel=[];
@@ -5167,19 +5170,37 @@ async function renderCoaches(){
   if(owned.length){
     for(var k=0;k<owned.length;k++){
       var club=owned[k];
-      var members=[];
-      try{ var r=await sb.from('club_members').select('*').eq('club_id',club.id); if(r&&r.data) members=r.data; }catch(e){}
+      var all=[];
+      try{ var r=await sb.from('club_members').select('*').eq('club_id',club.id); if(r&&r.data) all=r.data; }catch(e){}
+      var active=all.filter(function(m){return m.status!=='pending';});
+      var pending=all.filter(function(m){return m.status==='pending';});
+      var cap=club.max_coaches||10;
+      var full=active.length>=cap;
       html+='<div class="coach-club-card">'+
         '<div class="coach-club-name">'+escHtml(club.name||'My Club')+'</div>'+
         '<div class="coach-invite-row">'+
           '<div><div class="coach-invite-label">Invite code</div><div class="coach-invite-code">'+club.invite_code+'</div></div>'+
           '<button class="btn-ghost" style="width:auto;padding:8px 14px" onclick="copyInviteCode(\''+club.invite_code+'\')">Copy</button>'+
         '</div>'+
-        '<div style="font-size:11px;color:var(--muted);margin:8px 0 4px">Coaches sign up to Tactiq, then enter this code to join. Your saved sessions are shared with everyone in the club.</div>'+
-        '<div class="coach-members">'+
-          '<div class="coach-members-title">Coaches ('+(members.length+1)+')</div>'+
-          '<div class="coach-member-row"><div class="coach-member-email">'+escHtml(currentUser.email||'You')+' <span class="coach-role-badge admin">Owner</span></div></div>';
-      members.forEach(function(m){
+        '<div style="font-size:11px;color:var(--muted);margin:8px 0 4px">Coaches sign up to Tactiq and enter this code to request access — you approve each one. Your saved sessions are shared with approved coaches.</div>';
+      // pending requests
+      if(pending.length){
+        html+='<div class="coach-members"><div class="coach-members-title">Requests to join ('+pending.length+')</div>';
+        pending.forEach(function(m){
+          html+='<div class="coach-member-row">'+
+            '<div class="coach-member-email">'+escHtml(m.email||'Coach')+'</div>'+
+            '<div style="display:flex;gap:6px;align-items:center">'+
+              '<button class="btn" style="width:auto;padding:6px 12px;font-size:12px" onclick="approveMember(\''+m.id+'\')">Accept</button>'+
+              '<button class="coach-remove" onclick="declineMember(\''+m.id+'\')" title="Decline">✕</button>'+
+            '</div></div>';
+        });
+        html+='</div>';
+      }
+      // active coaches
+      html+='<div class="coach-members">'+
+        '<div class="coach-members-title">Coaches · '+active.length+' / '+cap+' seats</div>'+
+        '<div class="coach-member-row"><div class="coach-member-email">'+escHtml(currentUser.email||'You')+' <span class="coach-role-badge admin">Owner</span></div></div>';
+      active.forEach(function(m){
         html+='<div class="coach-member-row">'+
           '<div class="coach-member-email">'+escHtml(m.email||'Coach')+'</div>'+
           '<div style="display:flex;gap:6px;align-items:center">'+
@@ -5190,8 +5211,10 @@ async function renderCoaches(){
             '<button class="coach-remove" onclick="removeMember(\''+m.id+'\')" title="Remove">✕</button>'+
           '</div></div>';
       });
-      html+='</div>'+
-        '<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="renameClub(\''+club.id+'\')">✎ Rename club</button>'+
+      html+='</div>';
+      html+='<div style="font-size:10px;color:var(--muted);margin-top:8px">Your plan includes '+cap+' coach seats. Need more? Extra seats are £6/coach per month — get in touch to add them.</div>';
+      if(full){ html+='<div style="font-size:11px;color:var(--gold);margin-top:6px">All '+cap+' seats are in use — remove a coach to free one, or contact us to add seats at £6/coach per month.</div>'; }
+      html+='<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="renameClub(\''+club.id+'\')">✎ Rename club</button>'+
         '</div>';
     }
   } else if(isRealClubPro()){
@@ -5214,13 +5237,21 @@ async function renderCoaches(){
     });
   }
 
+  // ── Your pending requests ───────────────────────────
+  if(myPendingClubs.length){
+    html+='<div class="coach-section-title">Pending</div>';
+    myPendingClubs.forEach(function(p){
+      html+='<div class="coach-club-card"><div style="font-size:13px;color:var(--muted)">Your request to join <strong style="color:var(--text)">'+escHtml(p.name)+'</strong> is waiting for the head coach to approve. You\'ll get access once they accept.</div></div>';
+    });
+  }
+
   // ── Join a club ─────────────────────────────────────
   html+='<div class="coach-section-title">Join a club</div>'+
     '<div class="coach-club-card">'+
-      '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Enter the invite code your head coach gave you.</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Enter the invite code your head coach gave you. They\'ll approve your request before you get access.</div>'+
       '<div style="display:flex;gap:8px">'+
         '<input class="form-input" id="joinCodeInput" placeholder="e.g. AB3KZ9" style="text-transform:uppercase" maxlength="6"/>'+
-        '<button class="btn" style="width:auto;padding:12px 18px" onclick="joinClubByCode()">Join</button>'+
+        '<button class="btn" style="width:auto;padding:12px 18px" onclick="joinClubByCode()">Request</button>'+
       '</div>'+
     '</div>';
 
@@ -5264,11 +5295,30 @@ async function joinClubByCode(){
   var inp=document.getElementById('joinCodeInput'); if(!inp) return;
   var code=(inp.value||'').trim().toUpperCase(); if(!code){ inp.focus(); return; }
   try{
-    var r=await sb.rpc('join_club',{p_code:code});
-    if(r.error){ alert('Could not join: '+r.error.message); return; }
-    alert('Joined the club! The head coach\'s sessions will now appear in your dashboard.');
+    var r=await sb.rpc('request_join',{p_code:code});
+    if(r.error){ alert('Could not send request: '+r.error.message); return; }
+    if(r.data==='active'){ alert('You\'re already a member of this club.'); }
+    else { alert('Request sent! The head coach needs to approve you — you\'ll get access to their sessions and the club toolset once they accept.'); }
     await loadMyClubs(); await openCoachesScreen();
-  }catch(e){ alert('Could not join: '+e.message); }
+  }catch(e){ alert('Could not send request: '+e.message); }
+}
+
+async function approveMember(memberId){
+  try{
+    var r=await sb.rpc('approve_member',{p_member_id:memberId});
+    if(r.error){
+      var m=r.error.message||'';
+      alert(m.toLowerCase().indexOf('limit')>=0 ? 'Coach limit reached. Remove a coach to free a seat, or contact us to add more seats.' : ('Could not approve: '+m));
+      return;
+    }
+    await openCoachesScreen();
+  }catch(e){ alert('Could not approve: '+e.message); }
+}
+
+async function declineMember(memberId){
+  if(!confirm('Decline this coach\'s request?')) return;
+  try{ var r=await sb.from('club_members').delete().eq('id',memberId); if(r.error){alert('Could not decline: '+r.error.message);return;} await openCoachesScreen(); }
+  catch(e){ alert('Could not decline: '+e.message); }
 }
 
 async function leaveClub(clubId){
