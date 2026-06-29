@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v41 -->
+<!-- BUILD-2026-06-28-v42 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -69,7 +69,9 @@ html[data-theme="light"] .sp-hub-title,
 html[data-theme="light"] .sp-saved-name,
 html[data-theme="light"] .sp-tool-btn,
 html[data-theme="light"] .sp-type-card-label,
-html[data-theme="light"] .top-nav-logo{color:#10293f;}
+html[data-theme="light"] .top-nav-logo,
+html[data-theme="light"] .coach-club-name,
+html[data-theme="light"] .coach-member-email{color:#10293f;}
 html[data-theme="light"] .land-testi-text{color:#33485f !important;}
 html[data-theme="light"] .btn,
 html[data-theme="light"] .opt.sel,
@@ -546,6 +548,21 @@ body{background-image:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,194,255,
 .anim-speed{background:#0F2540;border:1px solid rgba(255,255,255,0.12);color:#c8d8e8;font-size:12px;padding:5px 8px;border-radius:6px;cursor:pointer;margin-left:auto;}
 .anim-progress-wrap{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
 .anim-progress-bar{height:100%;background:#00C2FF;width:0%;transition:width 0.05s linear;border-radius:2px;}
+/* ── Coaches & Access ─────────────────────────────── */
+.coach-club-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
+.coach-club-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:6px;}
+.coach-invite-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,194,255,0.08);border:1px dashed rgba(0,194,255,0.35);border-radius:10px;padding:10px 12px;margin-top:6px;}
+.coach-invite-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);}
+.coach-invite-code{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;letter-spacing:3px;color:#00C2FF;}
+.coach-members{margin-top:14px;}
+.coach-members-title{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.coach-member-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border);}
+.coach-member-email{font-size:13px;color:#e6eef7;word-break:break-word;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.coach-role-badge{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:20px;}
+.coach-role-badge.admin{background:rgba(255,214,0,0.18);color:#FFB300;}
+.coach-role-select{background:#0F2540;border:1px solid var(--border);color:#e6eef7;font-size:12px;padding:6px 8px;border-radius:8px;cursor:pointer;}
+.coach-remove{background:none;border:none;color:var(--error);font-size:14px;cursor:pointer;padding:4px 6px;touch-action:manipulation;}
+.coach-section-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:18px 0 8px;}
 </style>
 
 <!-- Meta Pixel — ADD YOUR PIXEL ID HERE BEFORE RUNNING PAID ADS -->
@@ -588,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v41</div>
+    <div class="land-badge">⚽ AI Football Coaching · v42</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1063,6 +1080,17 @@ fbq('track','PageView');
   </div>
 </div>
 
+<!-- ══════════ COACHES & ACCESS ══════════ -->
+<div id="coachesScreen" class="screen">
+  <div class="wrap">
+    <div class="navbar"><div class="nav-logo"><em>Tactiq</em></div><button class="nav-btn" onclick="showScreen('dashboardScreen')">Dashboard</button></div>
+    <button class="back-btn" onclick="showScreen('dashboardScreen')">← Back to Dashboard</button>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin:0 0 4px">Coaches &amp; <em>Access</em></h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 16px">Invite assistant coaches to your club so they can log in, see your sessions and team profiles, and help plan.</p>
+    <div id="coachesContent"></div>
+  </div>
+</div>
+
 <!-- ══════════ PLANS ══════════ -->
 <div id="plansScreen" class="screen">
   <div class="wrap">
@@ -1468,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v41 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v42 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -1995,6 +2023,7 @@ const ROUTES={
   '/history':()=>currentUser?openSessionHistory():navigate('/login'),
   '/planner':()=>currentUser?openWeeklyPlanner():navigate('/login'),
   '/fitness':()=>currentUser&&isClubProPlan()?openFitnessHub():navigate('/dashboard'),
+  '/coaches':()=>currentUser?openCoachesScreen():navigate('/login'),
 };
 function navigate(path){window.history.pushState({},document.title,path);routeTo(path);}
 
@@ -3759,6 +3788,29 @@ function buildSession(a,count=0){
 }
 
 let currentUser=null,userPlan='free',userSessions=[],monthSessions=0;
+// Multi-coach (Club) state. myClubs = clubs I own or belong to.
+let myClubs=[], activeClubId=null;
+function activeClub(){ return myClubs.find(c=>c.id===activeClubId)||null; }
+function myClubRole(){ var c=activeClub(); return c?c.role:null; }
+function canEditClub(){ var r=myClubRole(); return r==='admin'||r==='edit'; }
+function clubIdForSave(){ return (activeClubId && canEditClub())?activeClubId:null; }
+// Returns {club_id:...} ONLY when the user has an editable club (i.e. clubs are set
+// up). Spread into session inserts so existing users (no clubs / pre-SQL) are
+// completely unaffected — the key is omitted and the insert is unchanged.
+function clubCol(){ var id=clubIdForSave(); return id?{club_id:id}:{}; }
+async function loadMyClubs(){
+  myClubs=[]; activeClubId=null;
+  if(!currentUser||!currentUser.id||typeof sb==='undefined'||!sb) return;
+  try{
+    var owned=await sb.from('clubs').select('*').eq('owner_id',currentUser.id);
+    var mem=await sb.from('club_members').select('role,clubs(*)').eq('user_id',currentUser.id);
+    var list=[];
+    if(owned&&owned.data) owned.data.forEach(function(c){ list.push({id:c.id,name:c.name,invite_code:c.invite_code,owner_id:c.owner_id,role:'admin'}); });
+    if(mem&&mem.data) mem.data.forEach(function(m){ if(m.clubs) list.push({id:m.clubs.id,name:m.clubs.name,invite_code:m.clubs.invite_code,owner_id:m.clubs.owner_id,role:m.role||'view'}); });
+    var seen={}; myClubs=list.filter(function(c){ if(seen[c.id])return false; seen[c.id]=1; return true; });
+    activeClubId = myClubs.length?myClubs[0].id:null;
+  }catch(e){ myClubs=[]; activeClubId=null; }
+}
 let coachingProfile=null,cpEquip=[];
 let stepIdx=0,answers={},multiSel=[];
 let currentSession=null;
@@ -4350,7 +4402,8 @@ async function saveSession(session){
     tip:session.tip,phases:session.phases,
     session_id:session.sessionId||null,
     is_team:session.isTeam||false,
-    created_at:session.created_at
+    created_at:session.created_at,
+    ...clubCol()
   }]).select();
   if(!error&&data){
     userSessions.unshift(data[0]);
@@ -4987,6 +5040,10 @@ function renderPlanDashboard(){
           <div class="plan-dash-icon">💪</div>
           <div class="plan-dash-label">Fitness &amp; S&amp;C</div>
         </div>
+        <div class="plan-dash-btn plan-dash-btn-pro" onclick="navigate('/coaches')">
+          <div class="plan-dash-icon">🧑‍🏫</div>
+          <div class="plan-dash-label">Coaches &amp; Access</div>
+        </div>
       </div>`;
   } else if(isClub){
     buttonsHTML = `
@@ -5060,11 +5117,159 @@ function renderPlanDashboard(){
   }
 
   const planDashEl = document.getElementById('planDashButtons');
-  if(planDashEl) planDashEl.innerHTML = buttonsHTML;
+  if(planDashEl){
+    // Anyone can be invited to a club, so non-Club-Pro users still need an entry
+    // point to join or see their club access.
+    var coachesEntry = !isClubProUser
+      ? '<div style="text-align:center;margin-top:12px"><button class="btn-ghost" style="width:auto;padding:10px 18px" onclick="navigate(\'/coaches\')">🧑‍🏫 Coaches &amp; Access'+(myClubs.length?' ('+myClubs.length+')':'')+'</button></div>'
+      : '';
+    planDashEl.innerHTML = buttonsHTML + coachesEntry;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MULTI-COACH (CLUB ACCESS) — invite assistant coaches, roles, sharing
+// ══════════════════════════════════════════════════════════════════
+function _randCode(){ var s='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',o=''; for(var i=0;i<6;i++)o+=s[Math.floor(Math.random()*s.length)]; return o; }
+
+async function openCoachesScreen(){
+  document.querySelectorAll('.screen,.land-screen,.ex-screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('coachesScreen').classList.add('active');
+  window.scrollTo(0,0);
+  document.getElementById('coachesContent').innerHTML='<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:13px">Loading…</div>';
+  await loadMyClubs();
+  renderCoaches();
+}
+
+async function renderCoaches(){
+  var el=document.getElementById('coachesContent');
+  var owned=myClubs.filter(function(c){return c.owner_id===currentUser.id;});
+  var joined=myClubs.filter(function(c){return c.owner_id!==currentUser.id;});
+  var html='';
+
+  // ── Your club (owner) ───────────────────────────────
+  if(owned.length){
+    for(var k=0;k<owned.length;k++){
+      var club=owned[k];
+      var members=[];
+      try{ var r=await sb.from('club_members').select('*').eq('club_id',club.id); if(r&&r.data) members=r.data; }catch(e){}
+      html+='<div class="coach-club-card">'+
+        '<div class="coach-club-name">'+escHtml(club.name||'My Club')+'</div>'+
+        '<div class="coach-invite-row">'+
+          '<div><div class="coach-invite-label">Invite code</div><div class="coach-invite-code">'+club.invite_code+'</div></div>'+
+          '<button class="btn-ghost" style="width:auto;padding:8px 14px" onclick="copyInviteCode(\''+club.invite_code+'\')">Copy</button>'+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--muted);margin:8px 0 4px">Coaches sign up to Tactiq, then enter this code to join. Your saved sessions are shared with everyone in the club.</div>'+
+        '<div class="coach-members">'+
+          '<div class="coach-members-title">Coaches ('+(members.length+1)+')</div>'+
+          '<div class="coach-member-row"><div class="coach-member-email">'+escHtml(currentUser.email||'You')+' <span class="coach-role-badge admin">Owner</span></div></div>';
+      members.forEach(function(m){
+        html+='<div class="coach-member-row">'+
+          '<div class="coach-member-email">'+escHtml(m.email||'Coach')+'</div>'+
+          '<div style="display:flex;gap:6px;align-items:center">'+
+            '<select class="coach-role-select" onchange="setMemberRole(\''+m.id+'\',this.value)">'+
+              '<option value="view"'+(m.role==='view'?' selected':'')+'>Can view</option>'+
+              '<option value="edit"'+(m.role==='edit'?' selected':'')+'>Can edit</option>'+
+            '</select>'+
+            '<button class="coach-remove" onclick="removeMember(\''+m.id+'\')" title="Remove">✕</button>'+
+          '</div></div>';
+      });
+      html+='</div>'+
+        '<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="renameClub(\''+club.id+'\')">✎ Rename club</button>'+
+        '</div>';
+    }
+  } else if(isClubProPlan()){
+    html+='<div class="coach-club-card"><div class="coach-club-name">Create your club</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Set up a club so your assistant coaches can log in, see your sessions and team profiles, and help plan.</div>'+
+      '<button class="btn" style="width:100%" onclick="createClub()">+ Create Club</button></div>';
+  } else {
+    html+='<div class="coach-club-card"><div class="coach-club-name">Club Pro feature</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Creating a club and inviting coaches is part of <strong>Tactiq Club Pro</strong>. You can still join a club below if a head coach gives you a code.</div>'+
+      '<button class="btn" style="width:100%" onclick="navigate(\'/pricing\')">See Club Pro</button></div>';
+  }
+
+  // ── Clubs you've joined ─────────────────────────────
+  if(joined.length){
+    html+='<div class="coach-section-title">Clubs you\'ve joined</div>';
+    joined.forEach(function(c){
+      html+='<div class="coach-club-card"><div class="coach-club-name">'+escHtml(c.name||'Club')+'</div>'+
+        '<div style="font-size:12px;color:var(--muted)">Your access: <strong>'+(c.role==='edit'?'Can edit':'Can view')+'</strong></div>'+
+        '<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="leaveClub(\''+c.id+'\')">Leave club</button></div>';
+    });
+  }
+
+  // ── Join a club ─────────────────────────────────────
+  html+='<div class="coach-section-title">Join a club</div>'+
+    '<div class="coach-club-card">'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Enter the invite code your head coach gave you.</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<input class="form-input" id="joinCodeInput" placeholder="e.g. AB3KZ9" style="text-transform:uppercase" maxlength="6"/>'+
+        '<button class="btn" style="width:auto;padding:12px 18px" onclick="joinClubByCode()">Join</button>'+
+      '</div>'+
+    '</div>';
+
+  el.innerHTML=html;
+}
+
+async function createClub(){
+  if(!isClubProPlan()){ navigate('/pricing'); return; }
+  var name=prompt('Name your club (e.g. Riverside FC):','');
+  if(name===null) return;
+  try{
+    var code=_randCode(), attempts=0, res;
+    while(attempts<5){
+      res=await sb.from('clubs').insert([{owner_id:currentUser.id,name:(name||'My Club').trim(),invite_code:code}]).select();
+      if(!res.error) break;
+      if((res.error.message||'').toLowerCase().indexOf('duplicate')>=0 || (res.error.code==='23505')){ code=_randCode(); attempts++; continue; }
+      break;
+    }
+    if(res.error){ alert('Could not create club: '+res.error.message+'\n\nIf this mentions a missing table, the database setup SQL has not been run yet.'); return; }
+    await openCoachesScreen();
+  }catch(e){ alert('Could not create club: '+e.message); }
+}
+
+async function copyInviteCode(code){
+  try{ await navigator.clipboard.writeText(code); alert('Invite code copied: '+code); }
+  catch(e){ alert('Invite code: '+code); }
+}
+
+async function setMemberRole(memberId, role){
+  try{ var r=await sb.from('club_members').update({role:role}).eq('id',memberId); if(r.error) alert('Could not update role: '+r.error.message); }
+  catch(e){ alert('Could not update role: '+e.message); }
+}
+
+async function removeMember(memberId){
+  if(!confirm('Remove this coach from your club?')) return;
+  try{ var r=await sb.from('club_members').delete().eq('id',memberId); if(r.error){alert('Could not remove: '+r.error.message);return;} await openCoachesScreen(); }
+  catch(e){ alert('Could not remove: '+e.message); }
+}
+
+async function renameClub(clubId){
+  var name=prompt('New club name:',''); if(name===null||!name.trim()) return;
+  try{ var r=await sb.from('clubs').update({name:name.trim()}).eq('id',clubId); if(r.error){alert('Could not rename: '+r.error.message);return;} await openCoachesScreen(); }
+  catch(e){ alert('Could not rename: '+e.message); }
+}
+
+async function joinClubByCode(){
+  var inp=document.getElementById('joinCodeInput'); if(!inp) return;
+  var code=(inp.value||'').trim().toUpperCase(); if(!code){ inp.focus(); return; }
+  try{
+    var r=await sb.rpc('join_club',{p_code:code});
+    if(r.error){ alert('Could not join: '+r.error.message); return; }
+    alert('Joined the club! The head coach\'s sessions will now appear in your dashboard.');
+    await loadMyClubs(); await openCoachesScreen();
+  }catch(e){ alert('Could not join: '+e.message); }
+}
+
+async function leaveClub(clubId){
+  if(!confirm('Leave this club? You will lose access to its shared sessions.')) return;
+  try{ var r=await sb.from('club_members').delete().eq('club_id',clubId).eq('user_id',currentUser.id); if(r.error){alert('Could not leave: '+r.error.message);return;} await loadMyClubs(); await openCoachesScreen(); }
+  catch(e){ alert('Could not leave: '+e.message); }
 }
 
 async function loadDashboard(){
   await Promise.all([loadUserPlan(),loadCoachingProfile()]);
+  await loadMyClubs();
   if(isClubPlan()) await loadClubTeamProfiles();
   // Authenticated: always go to /dashboard URL
   if(!window.location.pathname.startsWith('/dashboard')&&
@@ -5091,7 +5296,21 @@ async function loadDashboard(){
 
   const now=new Date();
   const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString();
-  const{data,error}=await sb.from('sessions').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+  let data=null, error=null;
+  const clubIds=myClubs.map(c=>c.id);
+  if(clubIds.length){
+    // own sessions + sessions shared with any club I'm in
+    const r=await sb.from('sessions').select('*')
+      .or('user_id.eq.'+currentUser.id+',club_id.in.('+clubIds.join(',')+')')
+      .order('created_at',{ascending:false});
+    if(r.error){ // club_id column not set up yet — fall back to personal only
+      const r2=await sb.from('sessions').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+      data=r2.data; error=r2.error;
+    } else { data=r.data; error=r.error; }
+  } else {
+    const r=await sb.from('sessions').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+    data=r.data; error=r.error;
+  }
   userSessions=(!error&&data)?data:[];
   monthSessions=userSessions.filter(s=>s.created_at>=monthStart).length;
 
@@ -5327,7 +5546,8 @@ async function saveAiBuiltSession(){
     var res=await sb.from('sessions').insert([{
       user_id:currentUser.id, title:s.title, category:s.category||'AI Assistant',
       overview:s.overview||'', focus:s.focus||'AI Generated', intensity:s.intensity||'Medium',
-      time:s.time||'', phases:s.phases, is_team:!!s.isTeam, created_at:new Date().toISOString()
+      time:s.time||'', phases:s.phases, is_team:!!s.isTeam, created_at:new Date().toISOString(),
+      ...clubCol()
     }]).select();
     if(res.error){ alert('Could not save session: '+res.error.message); return; }
     if(res.data&&res.data[0]){ userSessions.unshift(res.data[0]); currentSession.id=res.data[0].id; currentSession._aiBuilt=false; }
@@ -5347,7 +5567,8 @@ async function saveAiSession(){
       overview:aiSessionResult,
       focus:'AI Generated',
       category:'AI Assistant',
-      created_at:new Date().toISOString()
+      created_at:new Date().toISOString(),
+      ...clubCol()
     }]).select();
     if(res.error){
       console.error('saveAiSession error:',res.error);
@@ -5518,7 +5739,8 @@ async function saveFitnessSession(){
       overview:fitnessSessionResult,
       focus:catLabel,
       category:'Fitness & S&C',
-      created_at:new Date().toISOString()
+      created_at:new Date().toISOString(),
+      ...clubCol()
     }]).select();
     if(res.error){
       console.error('saveFitnessSession error:',res.error);
