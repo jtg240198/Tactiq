@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v42 -->
+<!-- BUILD-2026-06-28-v43 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v42</div>
+    <div class="land-badge">⚽ AI Football Coaching · v43</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v42 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v43 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -3798,12 +3798,26 @@ function clubIdForSave(){ return (activeClubId && canEditClub())?activeClubId:nu
 // up). Spread into session inserts so existing users (no clubs / pre-SQL) are
 // completely unaffected — the key is omitted and the insert is unchanged.
 function clubCol(){ var id=clubIdForSave(); return id?{club_id:id}:{}; }
+// The login path can leave currentUser.id null; fetch the real id from the live
+// Supabase session so owner_id always equals auth.uid() (required by RLS).
+async function getAuthUid(){
+  try{
+    var u=await sb.auth.getUser();
+    if(u&&u.data&&u.data.user&&u.data.user.id){
+      if(currentUser) currentUser.id=u.data.user.id; else currentUser={id:u.data.user.id,email:u.data.user.email};
+      return u.data.user.id;
+    }
+  }catch(e){}
+  return (currentUser&&currentUser.id)||null;
+}
 async function loadMyClubs(){
   myClubs=[]; activeClubId=null;
-  if(!currentUser||!currentUser.id||typeof sb==='undefined'||!sb) return;
+  if(typeof sb==='undefined'||!sb) return;
+  var uid=await getAuthUid();
+  if(!uid) return;
   try{
-    var owned=await sb.from('clubs').select('*').eq('owner_id',currentUser.id);
-    var mem=await sb.from('club_members').select('role,clubs(*)').eq('user_id',currentUser.id);
+    var owned=await sb.from('clubs').select('*').eq('owner_id',uid);
+    var mem=await sb.from('club_members').select('role,clubs(*)').eq('user_id',uid);
     var list=[];
     if(owned&&owned.data) owned.data.forEach(function(c){ list.push({id:c.id,name:c.name,invite_code:c.invite_code,owner_id:c.owner_id,role:'admin'}); });
     if(mem&&mem.data) mem.data.forEach(function(m){ if(m.clubs) list.push({id:m.clubs.id,name:m.clubs.name,invite_code:m.clubs.invite_code,owner_id:m.clubs.owner_id,role:m.role||'view'}); });
@@ -5215,10 +5229,12 @@ async function createClub(){
   if(!isClubProPlan()){ navigate('/pricing'); return; }
   var name=prompt('Name your club (e.g. Riverside FC):','');
   if(name===null) return;
+  var uid=await getAuthUid();
+  if(!uid){ alert('Your login session looks expired. Please log out and back in, then try again.'); return; }
   try{
     var code=_randCode(), attempts=0, res;
     while(attempts<5){
-      res=await sb.from('clubs').insert([{owner_id:currentUser.id,name:(name||'My Club').trim(),invite_code:code}]).select();
+      res=await sb.from('clubs').insert([{owner_id:uid,name:(name||'My Club').trim(),invite_code:code}]).select();
       if(!res.error) break;
       if((res.error.message||'').toLowerCase().indexOf('duplicate')>=0 || (res.error.code==='23505')){ code=_randCode(); attempts++; continue; }
       break;
