@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v45 -->
+<!-- BUILD-2026-06-28-v46 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v45</div>
+    <div class="land-badge">⚽ AI Football Coaching · v46</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v45 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v46 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -2096,8 +2096,10 @@ function setBillingCycle(cycle){
 const isTeamPlan   = ()=>['coach','club','club_pro'].includes(userPlan);
 const isPaidPlan   = ()=>userPlan!=='free';
 const isCoachPlan  = ()=>userPlan==='coach';
-const isClubPlan   = ()=>userPlan==='club'||userPlan==='club_pro';
-const isClubProPlan= ()=>userPlan==='club_pro';
+const inClub       = ()=>Array.isArray(myClubs)&&myClubs.length>0;
+const isClubPlan   = ()=>userPlan==='club'||userPlan==='club_pro'||inClub();
+const isClubProPlan= ()=>userPlan==='club_pro'||inClub();
+const isRealClubPro= ()=>userPlan==='club_pro';
 function canGenerateTeamSession(){ return isTeamPlan(); }
 function assertSessionTypeAllowed(isTeam){
   if(isTeam && !canGenerateTeamSession()){
@@ -5192,7 +5194,7 @@ async function renderCoaches(){
         '<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="renameClub(\''+club.id+'\')">✎ Rename club</button>'+
         '</div>';
     }
-  } else if(isClubProPlan()){
+  } else if(isRealClubPro()){
     html+='<div class="coach-club-card"><div class="coach-club-name">Create your club</div>'+
       '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Set up a club so your assistant coaches can log in, see your sessions and team profiles, and help plan.</div>'+
       '<button class="btn" style="width:100%" onclick="createClub()">+ Create Club</button></div>';
@@ -5256,7 +5258,7 @@ async function runClubDiagnostic(){
 }
 
 async function createClub(){
-  if(!isClubProPlan()){ navigate('/pricing'); return; }
+  if(!isRealClubPro()){ navigate('/pricing'); return; }
   var name=prompt('Name your club (e.g. Riverside FC):','');
   if(name===null) return;
   try{
