@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v52 -->
+<!-- BUILD-2026-06-28-v53 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v52</div>
+    <div class="land-badge">⚽ AI Football Coaching · v53</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v52 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v53 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -2933,6 +2933,13 @@ function renderPitch(vw, vh, pitchType){
 function renderElements(elements){
   let svg='';
   (elements||[]).forEach(e=>{
+    // Some authored diagrams store a line's start point as x/y instead of
+    // x1/y1. Backfill so pass/run/shot/dribble/arrow always have a valid start
+    // (otherwise the SVG line gets undefined coords and silently fails to draw).
+    if(e.type==='pass'||e.type==='run'||e.type==='shot'||e.type==='dribble'||e.type==='arrow'){
+      if(e.x1===undefined||e.x1===null){ if(e.x!==undefined&&e.x!==null) e.x1=e.x; }
+      if(e.y1===undefined||e.y1===null){ if(e.y!==undefined&&e.y!==null) e.y1=e.y; }
+    }
     switch(e.type){
       case 'attacker':
         svg+=`<circle cx="${e.x}" cy="${e.y}" r="9" fill="${SYM.ATTACKER}" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>`;
@@ -6156,7 +6163,12 @@ function _animStart(key, btn){
 // Clone elements, assign each player/ball a stable id (_aid), guarantee exactly
 // one ball when a ball-travelling action exists.
 function _prepEntities(elements){
-  var work = elements.map(function(e){ var c={}; for(var k in e) c[k]=e[k]; return c; });
+  var work = elements.map(function(e){ var c={}; for(var k in e) c[k]=e[k];
+    if(c.type==='pass'||c.type==='run'||c.type==='shot'||c.type==='dribble'||c.type==='arrow'){
+      if(c.x1===undefined||c.x1===null){ if(c.x!==undefined&&c.x!==null) c.x1=c.x; }
+      if(c.y1===undefined||c.y1===null){ if(c.y!==undefined&&c.y!==null) c.y1=c.y; }
+    }
+    return c; });
   var nodes=[], ball=null, anchors={}; var ni=0;
   work.forEach(function(e){
     if(e.type==='attacker'||e.type==='defender'||e.type==='gk'||e.type==='neutral'){
