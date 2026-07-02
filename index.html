@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BUILD-2026-06-28-v50 -->
+<!-- BUILD-2026-06-28-v51 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -605,7 +605,7 @@ fbq('track','PageView');
 
   <!-- HERO -->
   <div class="land-hero" style="width:100%">
-    <div class="land-badge">⚽ AI Football Coaching · v50</div>
+    <div class="land-badge">⚽ AI Football Coaching · v51</div>
     <h1 class="land-h1">Build Professional<br>Football Sessions<br>in <em>60 Seconds</em></h1>
     <p class="land-sub">Tactiq uses AI and UEFA methodology to generate personalised coaching sessions for players, coaches and clubs — instantly.</p>
     <div class="land-cta-wrap">
@@ -1496,7 +1496,7 @@ fbq('track','PageView');
 
 
 <script>
-console.log('%c TACTIQ BUILD-2026-06-28-v50 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
+console.log('%c TACTIQ BUILD-2026-06-28-v51 ','background:#00C2FF;color:#000;font-weight:bold;padding:2px 6px');
 // ═══════════════════════════════════════════════════════
 // EXAMPLES PAGE DIAGRAMS
 // ═══════════════════════════════════════════════════════
@@ -5490,6 +5490,68 @@ function _aiHeaderParse(lines){
   phases.forEach(function(p){ if(!p.desc && p.points.length) p.desc=p.points.join('. '); });
   return phases.filter(function(p){ return (p.desc&&p.desc.length>3)||p.points.length; });
 }
+// ── AI-AUTHORED DIAGRAMS ─────────────────────────────────────────
+// The AI returns a DIAGRAM: {json} line per phase — the same "author each
+// diagram from the description" approach used for the hand-built library —
+// which we validate hard and attach as the phase setup. Any failure returns
+// null and the phase falls back to the heuristic generator.
+function parseAiDiagramLine(jsonStr, desc, phaseName){
+  try{
+    var o=JSON.parse(jsonStr);
+    var pitch=(o.pitch==='full'||o.pitch==='grid')?o.pitch:'half';
+    var vw=pitch==='grid'?220:280, vh=pitch==='half'?200:180;
+    var mX=6,mY=6;
+    function cl(v,lo,hi){ v=Math.round(+v||0); return Math.max(lo,Math.min(hi,v)); }
+    var els=[], counts={attacker:0,defender:0,neutral:0,gk:0};
+    (o.areas||[]).forEach(function(a){ els.push({type:'area',x:cl(a.x,mX,vw-mX),y:cl(a.y,mY,vh-mY),w:cl(a.w,10,vw),h:cl(a.h,10,vh),label:(a.l||a.label||'')+''}); });
+    (o.cones||[]).forEach(function(c){ var x=Array.isArray(c)?c[0]:c.x, y=Array.isArray(c)?c[1]:c.y; els.push({type:'cone',x:cl(x,mX,vw-mX),y:cl(y,mY,vh-mY)}); });
+    var tmap={A:'attacker',D:'defender',N:'neutral',GK:'gk'};
+    (o.players||[]).forEach(function(p){
+      var t=tmap[(p.t||'A').toUpperCase()]; if(!t)return;
+      counts[t]++;
+      var lab=(p.l||p.label||'')+'';
+      if(!lab && t!=='gk') lab=(t==='attacker'?'A':t==='defender'?'D':'N')+counts[t];
+      els.push({type:t,x:cl(p.x,mX,vw-mX),y:cl(p.y,mY,vh-mY),label:lab});
+    });
+    if(!counts.attacker && !counts.defender && !counts.neutral && !counts.gk) return null;
+    var vmap={pass:'pass',dribble:'dribble',run:'run',shot:'shot'};
+    var moves=[];
+    (o.moves||[]).forEach(function(m){
+      var t=vmap[(m.t||'').toLowerCase()]; if(!t)return;
+      moves.push({type:t,x1:cl(m.x1,mX,vw-mX),y1:cl(m.y1,mY,vh-mY),x2:cl(m.x2,mX,vw-mX),y2:cl(m.y2,mY,vh-mY),step:+m.s||0});
+    });
+    // Rewrite steps to a clean 1..n in given order (stable on provided s).
+    moves.sort(function(a,b){ return (a.step||99)-(b.step||99); });
+    moves.forEach(function(m,i){ m.step=i+1; els.push(m); });
+    if(o.ball && o.ball.length===2) els.push({type:'ball',x:cl(o.ball[0],mX,vw-mX),y:cl(o.ball[1],mY,vh-mY)});
+    els=normalizeBall(els); // exactly one ball, on the first action
+    // ── Hard validation against the phase description ──
+    var d=(desc||'').toLowerCase();
+    var nm=d.match(/(^|[^\d+])(\d+)\s*v\s*(\d+)/);
+    if(nm){
+      var a=+nm[2], b=+nm[3];
+      var okAB=(counts.attacker===a&&counts.defender===b)||(counts.attacker===b&&counts.defender===a)||
+               (counts.attacker+counts.neutral===a&&counts.defender===b);
+      if(!okAB) return null;
+    }
+    if(/goalkeeper|\bgk\b/.test(d) && counts.gk<1) return null;
+    if(/\bcorner(s\b|\b)/.test(d) && !/corner of|cone/.test(d)){
+      var ball=els.filter(function(e){return e.type==='ball';})[0];
+      if(ball){
+        var dl=Math.hypot(ball.x-10,ball.y-10), dr=Math.hypot(ball.x-(vw-10),ball.y-10);
+        if(Math.min(dl,dr)>20) return null;
+      }
+    }
+    var legend=[];
+    if(counts.attacker)legend.push('attacker'); if(counts.defender)legend.push('defender');
+    if(counts.neutral)legend.push('neutral'); if(counts.gk)legend.push('gk');
+    if(moves.some(function(m){return m.type==='pass';}))legend.push('pass');
+    if(moves.some(function(m){return m.type==='dribble';}))legend.push('dribble');
+    if(moves.some(function(m){return m.type==='run';}))legend.push('run');
+    return {pitchType:pitch,vw:vw,vh:vh,title:phaseName||'',legend:legend,elements:els};
+  }catch(e){ return null; }
+}
+
 function parseAiSessionText(text, isTeam){
   if(!text) return null;
   var lines=text.replace(/\r/g,'').split('\n');
@@ -5509,6 +5571,11 @@ function parseAiSessionText(text, isTeam){
       if(/^PHASE\s*:/i.test(line) && line.indexOf('|')>=0){
         var parts=line.replace(/^PHASE\s*:/i,'').split('|').map(function(s){return s.trim();});
         phases.push({name:_aiCleanName(parts[0]||'Phase'),duration:parts[1]||'',desc:parts[2]||'',points:[]}); seenCP=false;
+      } else if(/^DIAGRAM\s*:/i.test(line) && phases.length){
+        var jsonPart=line.replace(/^DIAGRAM\s*:/i,'').trim();
+        var ph_=phases[phases.length-1];
+        var st_=parseAiDiagramLine(jsonPart, ph_.desc, ph_.name);
+        if(st_) ph_.setup=st_;
       } else if(/^COACHING POINTS/i.test(line)){ seenCP=true; }
       else if(/^[-•*]\s+/.test(line) && phases.length){ (seenCP?phases[0]:phases[phases.length-1]).points.push(line.replace(/^[-•*]\s+/,'').trim()); }
     });
@@ -5522,7 +5589,7 @@ function parseAiSessionText(text, isTeam){
   return {
     title:title, overview:overview||focus||'', focus:focus||'AI Generated',
     category:'AI Assistant', intensity:inten, time:duration||'', isTeam:!!isTeam,
-    phases:phases.map(function(p){ return {phase:canonicalPhase(p.name),title:p.name||p.phase,desc:p.desc,duration:p.duration,points:p.points}; }),
+    phases:phases.map(function(p){ return {phase:canonicalPhase(p.name),title:p.name||p.phase,desc:p.desc,duration:p.duration,points:p.points,setup:p.setup||undefined}; }),
     _aiBuilt:true, _rawText:text
   };
 }
@@ -5541,8 +5608,15 @@ async function runAiAssistant(){
       'DURATION: [total time]\n'+
       'INTENSITY: [Low, Medium or High]\n'+
       'OVERVIEW: [one or two sentence summary]\n'+
-      'Then 3 to 5 phases, each on its OWN line formatted EXACTLY as:\n'+
+      'Then 3 to 5 phases. For EACH phase output exactly TWO lines:\n'+
       'PHASE: [name] | [duration] | [description]\n'+
+      'DIAGRAM: [compact JSON on ONE line — the pitch diagram YOU author for that exact phase]\n'+
+      'DIAGRAM JSON schema: {"pitch":"half|full|grid","players":[{"t":"A|D|N|GK","l":"label","x":N,"y":N}],"ball":[x,y],"moves":[{"t":"pass|dribble|run|shot","x1":N,"y1":N,"x2":N,"y2":N,"s":1}],"cones":[[x,y]],"areas":[{"x":N,"y":N,"w":N,"h":N,"l":"20x15m"}]}\n'+
+      'PITCH GEOMETRY (use these exact coordinate systems):\n'+
+      '- "half" for attacking/defending scenarios: canvas 280x200, playing area x 10-270, y 10-190. The goal being attacked is TOP CENTRE with its mouth at (140,10). Penalty box x 90-190 y 10-55. Six-yard box x 110-170 y 10-28. Penalty spot (140,42). Corner flags at (10,10) and (270,10). GK stands at (140,16).\n'+
+      '- "full" for large games (12+ players): canvas 280x180, area x 10-270 y 8-172, goals at LEFT (15,90) and RIGHT (265,90), halfway line x=140.\n'+
+      '- "grid" for small technical drills: canvas 220x180, open area x 8-212 y 8-172, no goals — mark the working area with "areas".\n'+
+      'DIAGRAM RULES: player counts MUST equal the phase description exactly (4v2 means 4 A and 2 D; add GK only if the description says so). t values: A=attacking/possession team, D=defenders/opposition, N=neutrals or jokers, GK=goalkeeper. Use short football labels (ST, LW, RW, CM, CB, A1, D1). Space players at least 14 units apart in realistic positions for the drill. Number moves s=1,2,3... in playing order; the ball coordinates are where move 1 starts. For corner kicks put the ball AND taker ON the corner flag. Show the key pattern of the drill with 2-4 moves, not every repetition.\n'+
       'Then a line "COACHING POINTS:" followed by 3 to 5 bullet lines each starting with "- ".\n'+
       'CRITICAL: every PHASE description must be concrete and spatial so it can be drawn as a pitch diagram — state the player numbers (e.g. "5v2", "3v2 to goal"), whether there is a goalkeeper, the pitch area, and the key actions (pass, dribble, cross, shoot, press, switch). Keep each description to one or two sentences. Tailor everything to the coach\u2019s request.';
     var r=await fetch('/.netlify/functions/ai-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,system:aiSys})});
